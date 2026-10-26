@@ -131,27 +131,44 @@ class _RepeatSheetState extends State<RepeatSheet> {
   Widget build(BuildContext context) {
     final repeating = _draft.frequency != RepeatFrequency.none;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = dark ? Colors.white : Theme.of(context).colorScheme.onSurface;
     return Padding(
       padding: EdgeInsets.only(bottom: bottom),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(context).height * 0.92 - bottom,
         ),
+        child: Theme(
+        data: Theme.of(context).copyWith(
+          textTheme: Theme.of(context).textTheme.apply(
+            bodyColor: textColor,
+            displayColor: textColor,
+          ),
+          listTileTheme: ListTileThemeData(textColor: textColor),
+        ),
         child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.fromLTRB(8, 0, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                IconButton(
-                  tooltip: 'Done',
-                  onPressed: _done,
-                  icon: const Icon(Icons.check),
-                ),
-                const SizedBox(width: 8),
-                Text('Repeat', style: Theme.of(context).textTheme.titleLarge),
-              ],
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Repeat',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: textColor),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton(
+                    onPressed: _done,
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -232,6 +249,7 @@ class _RepeatSheetState extends State<RepeatSheet> {
                 child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ),
           ],
+        ),
         ),
         ),
       ),

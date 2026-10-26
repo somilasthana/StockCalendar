@@ -56,6 +56,53 @@ class _CalendarScreenState extends State<CalendarScreen> with WidgetsBindingObse
     }
   }
 
+  Widget _calendarBody(BuildContext context, CalendarController calendar) {
+    final page = switch (calendar.view) {
+      CalendarView.month => MonthView(
+          visible: calendar.selected,
+          selected: calendar.selected,
+          series: calendar.series,
+          onDay: (day) => _openDay(context, day),
+          onMonth: calendar.select,
+        ),
+      CalendarView.week => WeekView(
+          selected: calendar.selected,
+          series: calendar.series,
+          onDay: (day) => _openDay(context, day),
+        ),
+      CalendarView.day => DayView(
+          selected: calendar.selected,
+          series: calendar.series,
+          onOpenBuy: (series) => showBuySheet(
+            context,
+            day: calendar.selected,
+            existing: series,
+          ),
+        ),
+      CalendarView.year => YearView(
+          year: calendar.selected.year,
+          onMonth: (year, month) {
+            final today = dateOnly(DateTime.now());
+            final day = today.year == year && today.month == month
+                ? today
+                : DateTime(year, month, 1);
+            calendar.select(day, open: CalendarView.month);
+          },
+          onDay: (day) => calendar.select(day, open: CalendarView.month),
+        ),
+    };
+    if (calendar.view == CalendarView.month) return page;
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        if (velocity > 250) calendar.shift(-1);
+        if (velocity < -250) calendar.shift(1);
+      },
+      child: page,
+    );
+  }
+
   void _openDay(BuildContext context, DateTime day) {
     if (isWeekend(day)) return;
     final calendar = context.read<CalendarController>();
@@ -131,49 +178,7 @@ class _CalendarScreenState extends State<CalendarScreen> with WidgetsBindingObse
               padding: const EdgeInsets.all(16),
               child: Text(calendar.error!),
             ),
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onHorizontalDragEnd: (details) {
-                final velocity = details.primaryVelocity ?? 0;
-                if (velocity > 250) calendar.shift(-1);
-                if (velocity < -250) calendar.shift(1);
-              },
-              child: switch (calendar.view) {
-                CalendarView.month => MonthView(
-                    visible: calendar.selected,
-                    selected: calendar.selected,
-                    series: calendar.series,
-                    onDay: (day) => _openDay(context, day),
-                  ),
-                CalendarView.week => WeekView(
-                    selected: calendar.selected,
-                    series: calendar.series,
-                    onDay: (day) => _openDay(context, day),
-                  ),
-                CalendarView.day => DayView(
-                    selected: calendar.selected,
-                    series: calendar.series,
-                    onOpenBuy: (series) => showBuySheet(
-                      context,
-                      day: calendar.selected,
-                      existing: series,
-                    ),
-                  ),
-                CalendarView.year => YearView(
-                    year: calendar.selected.year,
-                    onMonth: (year, month) {
-                      final today = dateOnly(DateTime.now());
-                      final day = today.year == year && today.month == month
-                          ? today
-                          : DateTime(year, month, 1);
-                      calendar.select(day, open: CalendarView.month);
-                    },
-                    onDay: (day) => calendar.select(day, open: CalendarView.month),
-                  ),
-              },
-            ),
-          ),
+          Expanded(child: _calendarBody(context, calendar)),
         ],
       ),
     );

@@ -61,11 +61,18 @@ class DayNumber extends StatelessWidget {
 }
 
 class StockChip extends StatelessWidget {
-  const StockChip({super.key, required this.name, this.onTap, this.fontSize = 10});
+  const StockChip({
+    super.key,
+    required this.name,
+    this.onTap,
+    this.fontSize = 10,
+    this.maxLines = 2,
+  });
 
   final String name;
   final VoidCallback? onTap;
   final double fontSize;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -82,11 +89,12 @@ class StockChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: Text(
               name,
-              maxLines: 1,
+              maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: colors.chipForeground,
                 fontSize: fontSize,
+                height: 1.15,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -98,14 +106,20 @@ class StockChip extends StatelessWidget {
 }
 
 class WeekdayHeader extends StatelessWidget {
-  const WeekdayHeader({super.key, this.labels = const ['M', 'T', 'W', 'T', 'F', 'S', 'S']});
+  const WeekdayHeader({
+    super.key,
+    this.labels = const ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+    this.larger = false,
+  });
 
   final List<String> labels;
+  final bool larger;
 
   @override
   Widget build(BuildContext context) {
     final colors = calendarColors(context);
     final style = Theme.of(context).textTheme.labelMedium;
+    final size = (style?.fontSize ?? 12) + (larger ? 2 : 0);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -116,6 +130,7 @@ class WeekdayHeader extends StatelessWidget {
                 labels[index],
                 textAlign: TextAlign.center,
                 style: style?.copyWith(
+                  fontSize: size,
                   color: index >= 5 ? colors.weekend : Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),

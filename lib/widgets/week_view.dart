@@ -41,7 +41,7 @@ class WeekView extends StatelessWidget {
                         Text(
                           letters[index],
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: index >= 5
                                 ? colors.weekend
@@ -53,6 +53,7 @@ class WeekView extends StatelessWidget {
                           date: days[index],
                           today: today,
                           selected: dateOnly(days[index]) == dateOnly(selected),
+                          fontSize: 14,
                         ),
                       ],
                     ),
@@ -104,7 +105,7 @@ class _WeekColumn extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       children: [
         for (final buy in buys)
-          StockChip(name: buy.series.stockName, fontSize: 11, onTap: onOpen),
+          StockChip(name: buy.series.stockName, fontSize: 11, maxLines: 2, onTap: onOpen),
       ],
     );
   }

@@ -32,12 +32,12 @@ class DayView extends StatelessWidget {
           children: [
             Text(
               '${day.day}',
-              style: TextStyle(fontSize: 36, fontWeight: FontWeight.w500, color: titleColor),
+              style: TextStyle(fontSize: 38, fontWeight: FontWeight.w500, color: titleColor),
             ),
             const SizedBox(width: 12),
             Text(
               weekdayShort[day.weekday - 1],
-              style: TextStyle(fontSize: 22, color: titleColor),
+              style: TextStyle(fontSize: 24, color: titleColor),
             ),
           ],
         ),
@@ -52,7 +52,7 @@ class DayView extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   'Market closed',
-                  style: TextStyle(fontSize: 18, color: colors.weekend),
+                  style: TextStyle(fontSize: 20, color: colors.weekend),
                 ),
               ],
             ),
@@ -62,7 +62,10 @@ class DayView extends StatelessWidget {
             padding: const EdgeInsets.only(top: 32),
             child: Text(
               'No buys on this day',
-              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           )
         else
@@ -74,8 +77,8 @@ class DayView extends StatelessWidget {
                 height: 36,
                 color: colors.today,
               ),
-              title: Text(buy.series.stockName),
-              subtitle: Text(buy.series.symbol),
+              title: Text(buy.series.stockName, style: const TextStyle(fontSize: 18)),
+              subtitle: Text(buy.series.symbol, style: const TextStyle(fontSize: 16)),
               onTap: () => onOpenBuy(buy.series),
             ),
       ],
