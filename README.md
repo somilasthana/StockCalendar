@@ -1,17 +1,46 @@
-# MyStock Calendar
+# StockCalendar Lite
 
-A phone calendar for stocks you plan to buy. It runs on Android and iPhone from one Flutter project. The month view is the home screen. Saturday and Sunday stay empty because the market is closed. A weekday holiday still gets the buy.
+A phone calendar for stocks you plan to buy. This release is StockCalendar Lite. One account and its buys stay on the phone. It runs on Android and iPhone from one Flutter project. The month view is the home screen. Saturday and Sunday stay empty because the market is closed. A weekday holiday still gets the buy.
 
 Alerts are scheduled on the phone at **10:30am and 3:00pm India time (IST)** for each stock that day. The phone can be in any time zone. 10:30am IST is 5:00am UTC, which is **3:00pm in Sydney** during Australian Eastern Standard Time (UTC+10) and **4:00pm** during daylight saving (UTC+11). 3:00pm IST is 7:30pm in Sydney on standard time and 8:30pm during daylight saving.
+
+The home-screen name is StockCalendar Lite. The Android package stays `com.mystockcalendar.stock_calendar`.
 
 ## What you need
 
 - Flutter stable (this project was started on 3.47)
 - Android Studio, or the Android SDK plus an emulator, to run it on Windows
 - A Mac with Xcode to build the iPhone app
-- A free Firebase project on the Spark plan for email login and cloud sync
 
-Until Firebase is connected, the app keeps one account and its buys on the phone. That on-device login is only for trying the calendar. Connect Firebase before you rely on it.
+Lite does not need Firebase. A later release can turn on email login and cloud sync. Those steps stay in the Firebase section below.
+
+## Sign-in on this phone
+
+The first time the app is opened on a phone, the button says **Registration**. The screen asks for:
+
+- Email
+- A 4-digit PIN (`0123` is allowed)
+- Secret Key, directly under the PIN
+
+The Secret Key must match `secretKey` in `assets/data.json`. Spaces at the ends are ignored. Capital letters must match. A wrong or empty key shows **Insert the correct secret key.** and does not save the account. The email and PIN are checked first. A PIN that is not exactly four digits shows **Enter a 4 digit PIN.**
+
+Set the key before you build, then rebuild so the installed app contains it:
+
+```json
+{
+  "secretKey": "the key the person must type"
+}
+```
+
+The current key is in `assets/data.json`. Sign-in after registration does not read that key. The file stays in the app for a later release.
+
+The key is inside the APK. It stops someone who only copies the APK onto another phone and opens it. It does not stop someone who unpacks the APK and reads `assets/data.json`.
+
+Registration stores the email and PIN on the phone and opens the calendar. The app stays signed in until **Log out**. After log out, the button says **Sign In**. That screen asks for the same email and PIN only. A wrong email or PIN shows **Email or PIN is incorrect.**
+
+One phone holds one account. Sign in with a different email fails. **Create an account** and **Forgot password** stay in the login screen and are hidden. There is no screen to change the PIN. Clearing the app data or uninstalling removes the account and the buys. The next open is registration again, including the secret key.
+
+An account saved by an older build used a longer password. Log out on that phone, then clear the app data, and register again with a 4-digit PIN.
 
 ## Windows setup
 
@@ -67,6 +96,8 @@ iPhone only keeps a limited queue of scheduled alerts (about 64). Open the app e
 
 ## Firebase
 
+StockCalendar Lite does not use Firebase. The account, PIN, and buys stay on the phone. The steps below are for a later release. Create an account and Forgot password are already in the login screen, hidden, so that release can show them again.
+
 Stay on the **Spark** plan. This app does not use Cloud Functions or push messaging. Alerts are scheduled on the phone.
 
 1. Open the [Firebase console](https://console.firebase.google.com/) and create a project. Leave Google Analytics off if you do not need it.
@@ -99,13 +130,13 @@ flutterfire configure
 const bool kFirebaseConfigured = true;
 ```
 
-8. Run the app again. Create an account with email and password. Forgot password sends a reset email through Firebase.
+8. Run the app again. That later release signs in with email and password through Firebase. Forgot password sends a reset email through Firebase.
 
 Do not create a service-account private key. The Android and iPhone config files are the only credentials the app needs. Do not commit a service-account JSON file if you download one by mistake.
 
 ### What is stored
 
-Each buy is one document:
+Each buy is one document when Firebase is on:
 
 `users/{uid}/series/{id}`
 
@@ -118,7 +149,7 @@ Each buy is one document:
 - `cutBefore` when a later day was edited or deleted
 - `createdAt`
 
-Repeated days are calculated on the phone. They are not copied into the database one day at a time.
+On Lite, the same buys are stored on the phone. Repeated days are calculated on the phone. They are not copied into the database one day at a time.
 
 ## Repeat rules
 
@@ -140,7 +171,7 @@ Each visible stock on a day gets its own alert at the open and another at the cl
 
 Android may ask for notification permission and for alarms and reminders. Allow both so the times stay exact.
 
-In a debug build, MyStock Calendar → **Send a test alert** fires a sample in about 10 seconds so you can check the banner and the snooze buttons. Release builds do not show that button. Saved buys still alert at 10:30am and 3:00pm IST.
+In a debug build, open the side menu, tap **StockCalendar Lite**, then **Send a test alert**. It fires a sample in about 10 seconds so you can check the banner and the snooze buttons. Release builds do not show that button. Saved buys still alert at 10:30am and 3:00pm IST.
 
 ## Tests
 
@@ -148,7 +179,7 @@ In a debug build, MyStock Calendar → **Send a test alert** fires a sample in a
 flutter test
 ```
 
-The tests cover the 23 Sept 2026 examples, a weekend month that is skipped, a 31st that falls in a short month, an until date, and the India time conversion.
+The tests cover the 23 Sept 2026 examples, a weekend month that is skipped, a 31st that falls in a short month, an until date, and the India time conversion. The calendar flow test registers with the secret key from `assets/data.json`, adds a buy, and opens the other views.
 
 ## Useful commands
 

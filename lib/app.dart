@@ -31,7 +31,7 @@ class MyStockApp extends StatelessWidget {
       child: Consumer<ThemeController>(
         builder: (context, themeController, _) {
           return MaterialApp(
-            title: 'MyStock Calendar',
+            title: 'StockCalendar Lite',
             debugShowCheckedModeBanner: false,
             theme: buildLightTheme(),
             darkTheme: buildDarkTheme(),

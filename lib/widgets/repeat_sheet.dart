@@ -44,7 +44,6 @@ Future<RepeatDraft?> showRepeatSheet(BuildContext context, RepeatDraft current, 
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    isDismissible: false,
     builder: (context) => RepeatSheet(initial: current, anchor: anchor),
   );
 }

@@ -151,17 +151,6 @@ class _CalendarScreenState extends State<CalendarScreen> with WidgetsBindingObse
             ),
       body: Column(
         children: [
-          if (!auth.firebaseActive)
-            Material(
-              color: Theme.of(context).colorScheme.secondaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text(
-                  'Buys stay on this device until Firebase is connected.',
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer),
-                ),
-              ),
-            ),
           if (calendar.alertMessage != null)
             MaterialBanner(
               content: Text(calendar.alertMessage!),

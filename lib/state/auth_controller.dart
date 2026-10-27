@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthController extends ChangeNotifier {
@@ -14,6 +17,12 @@ class AuthController extends ChangeNotifier {
   bool busy = false;
   String? error;
   String? notice;
+
+  bool get hasLocalAccount {
+    final savedEmail = _prefs.getString('local_email');
+    final savedLock = _prefs.getString('local_password');
+    return savedEmail != null && savedEmail.isNotEmpty && savedLock != null && savedLock.isNotEmpty;
+  }
 
   Future<void> restore() async {
     if (firebaseActive) {
@@ -35,11 +44,16 @@ class AuthController extends ChangeNotifier {
     return _submit(rawEmail, password, create: false);
   }
 
-  Future<bool> signUp(String rawEmail, String password) {
-    return _submit(rawEmail, password, create: true);
+  Future<bool> signUp(String rawEmail, String password, {String secretKey = ''}) {
+    return _submit(rawEmail, password, create: true, secretKey: secretKey);
   }
 
-  Future<bool> _submit(String rawEmail, String password, {required bool create}) async {
+  Future<bool> _submit(
+    String rawEmail,
+    String password, {
+    required bool create,
+    String secretKey = '',
+  }) async {
     final address = rawEmail.trim();
     final formError = _formError(address, password);
     if (formError != null) {
@@ -67,6 +81,11 @@ class AuthController extends ChangeNotifier {
           );
         }
       } else if (create) {
+        final secretError = await _secretError(secretKey);
+        if (secretError != null) {
+          error = secretError;
+          return false;
+        }
         await _prefs.setString('local_email', address);
         await _prefs.setString('local_uid', address.toLowerCase());
         await _prefs.setString('local_password', _lock(password));
@@ -80,7 +99,7 @@ class AuthController extends ChangeNotifier {
           return false;
         }
         if (savedLock != _lock(password)) {
-          error = 'Email or password is incorrect.';
+          error = 'Email or PIN is incorrect.';
           return false;
         }
         final id = savedEmail.toLowerCase();
@@ -144,8 +163,28 @@ class AuthController extends ChangeNotifier {
 
   String? _formError(String address, String password) {
     if (!address.contains('@') || !address.contains('.')) return 'Enter a valid email.';
+    if (!firebaseActive) {
+      if (!RegExp(r'^\d{4}$').hasMatch(password)) return 'Enter a 4 digit PIN.';
+      return null;
+    }
     if (password.length < 6) return 'Use at least 6 characters.';
     return null;
+  }
+
+  Future<String?> _secretError(String entered) async {
+    try {
+      final raw = await rootBundle.loadString('assets/data.json');
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return 'Insert the correct secret key.';
+      final expected = decoded['secretKey'];
+      if (expected is! String || expected.trim().isEmpty) {
+        return 'Insert the correct secret key.';
+      }
+      if (entered.trim() != expected.trim()) return 'Insert the correct secret key.';
+      return null;
+    } catch (_) {
+      return 'Insert the correct secret key.';
+    }
   }
 
   String _lock(String password) {

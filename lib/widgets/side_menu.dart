@@ -39,7 +39,7 @@ class SideMenu extends StatelessWidget {
                 foregroundColor: scheme.onPrimary,
                 child: Text(email.isEmpty ? '?' : email[0].toUpperCase()),
               ),
-              title: const Text('MyStock Calendar'),
+              title: const Text('StockCalendar Lite'),
               subtitle: Text(email.isEmpty ? 'Not signed in' : email),
               onTap: () {
                 Navigator.pop(context);
