@@ -30,6 +30,16 @@ class FirestoreSeriesRepository implements SeriesRepository {
   }
 
   @override
+  Future<void> saveMany(List<BuySeries> series) async {
+    if (series.isEmpty) return;
+    final batch = FirebaseFirestore.instance.batch();
+    for (final item in series) {
+      batch.set(_series.doc(item.id), item.toJson());
+    }
+    await batch.commit();
+  }
+
+  @override
   Future<void> apply(String originalId, SeriesChange change) async {
     final batch = FirebaseFirestore.instance.batch();
     final original = _series.doc(originalId);

@@ -55,7 +55,11 @@ class CalendarController extends ChangeNotifier {
       case CalendarView.day:
         selected = addDays(selected, direction);
       case CalendarView.year:
-        selected = clampDate(selected.year + direction, selected.month, selected.day);
+        selected = clampDate(
+          selected.year + direction,
+          selected.month,
+          selected.day,
+        );
     }
     notifyListeners();
   }
@@ -87,18 +91,21 @@ class CalendarController extends ChangeNotifier {
     loading = true;
     error = null;
     notifyListeners();
-    _sub = _repo!.watch().listen((items) async {
-      series = items;
-      loading = false;
-      error = null;
-      notifyListeners();
-      alertMessage = await _notifications.reschedule(items);
-      notifyListeners();
-    }, onError: (Object _) {
-      loading = false;
-      error = 'Could not load buys.';
-      notifyListeners();
-    });
+    _sub = _repo!.watch().listen(
+      (items) async {
+        series = items;
+        loading = false;
+        error = null;
+        notifyListeners();
+        alertMessage = await _notifications.reschedule(items);
+        notifyListeners();
+      },
+      onError: (Object _) {
+        loading = false;
+        error = 'Could not load buys.';
+        notifyListeners();
+      },
+    );
   }
 
   void dismissAlert() {
@@ -145,7 +152,9 @@ class CalendarController extends ChangeNotifier {
       frequency: frequency,
       interval: frequency == RepeatFrequency.days ? interval : 1,
       endType: frequency == RepeatFrequency.none ? RepeatEnd.forever : endType,
-      count: frequency != RepeatFrequency.none && endType == RepeatEnd.count ? count : null,
+      count: frequency != RepeatFrequency.none && endType == RepeatEnd.count
+          ? count
+          : null,
       untilDate: frequency != RepeatFrequency.none && endType == RepeatEnd.until
           ? untilDate
           : null,
@@ -155,6 +164,19 @@ class CalendarController extends ChangeNotifier {
       await _repo?.saveNew(item);
     } catch (_) {
       return 'Could not save this buy.';
+    }
+    return null;
+  }
+
+  /// Appends imported buys in one write. Buys already on the phone stay.
+  Future<String?> saveImported(List<BuySeries> items) async {
+    if (items.isEmpty) return null;
+    final repo = _repo;
+    if (repo == null) return 'Could not save these buys.';
+    try {
+      await repo.saveMany(items);
+    } catch (_) {
+      return 'Could not save these buys.';
     }
     return null;
   }

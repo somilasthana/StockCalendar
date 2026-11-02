@@ -49,6 +49,13 @@ class LocalSeriesRepository implements SeriesRepository {
   }
 
   @override
+  Future<void> saveMany(List<BuySeries> series) async {
+    if (series.isEmpty) return;
+    final items = _read()..addAll(series);
+    await _write(items);
+  }
+
+  @override
   Future<void> apply(String originalId, SeriesChange change) async {
     final items = _read();
     items.removeWhere((item) => item.id == originalId);

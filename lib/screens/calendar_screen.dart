@@ -1,7 +1,11 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../logic/dates.dart';
+import '../logic/import_buys.dart';
 import '../logic/recurrence.dart';
 import '../state/auth_controller.dart';
 import '../state/calendar_controller.dart';
@@ -20,7 +24,8 @@ class CalendarScreen extends StatefulWidget {
   State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> with WidgetsBindingObserver {
+class _CalendarScreenState extends State<CalendarScreen>
+    with WidgetsBindingObserver {
   String? _boundUid;
 
   @override
@@ -59,37 +64,34 @@ class _CalendarScreenState extends State<CalendarScreen> with WidgetsBindingObse
   Widget _calendarBody(BuildContext context, CalendarController calendar) {
     final page = switch (calendar.view) {
       CalendarView.month => MonthView(
-          visible: calendar.selected,
-          selected: calendar.selected,
-          series: calendar.series,
-          onDay: (day) => _openDay(context, day),
-          onMonth: calendar.select,
-        ),
+        visible: calendar.selected,
+        selected: calendar.selected,
+        series: calendar.series,
+        onDay: (day) => _openDay(context, day),
+        onMonth: calendar.select,
+      ),
       CalendarView.week => WeekView(
-          selected: calendar.selected,
-          series: calendar.series,
-          onDay: (day) => _openDay(context, day),
-        ),
+        selected: calendar.selected,
+        series: calendar.series,
+        onDay: (day) => _openDay(context, day),
+      ),
       CalendarView.day => DayView(
-          selected: calendar.selected,
-          series: calendar.series,
-          onOpenBuy: (series) => showBuySheet(
-            context,
-            day: calendar.selected,
-            existing: series,
-          ),
-        ),
+        selected: calendar.selected,
+        series: calendar.series,
+        onOpenBuy: (series) =>
+            showBuySheet(context, day: calendar.selected, existing: series),
+      ),
       CalendarView.year => YearView(
-          year: calendar.selected.year,
-          onMonth: (year, month) {
-            final today = dateOnly(DateTime.now());
-            final day = today.year == year && today.month == month
-                ? today
-                : DateTime(year, month, 1);
-            calendar.select(day, open: CalendarView.month);
-          },
-          onDay: (day) => calendar.select(day, open: CalendarView.month),
-        ),
+        year: calendar.selected.year,
+        onMonth: (year, month) {
+          final today = dateOnly(DateTime.now());
+          final day = today.year == year && today.month == month
+              ? today
+              : DateTime(year, month, 1);
+          calendar.select(day, open: CalendarView.month);
+        },
+        onDay: (day) => calendar.select(day, open: CalendarView.month),
+      ),
     };
     if (calendar.view == CalendarView.month) return page;
     return GestureDetector(
@@ -100,6 +102,54 @@ class _CalendarScreenState extends State<CalendarScreen> with WidgetsBindingObse
         if (velocity < -250) calendar.shift(1);
       },
       child: page,
+    );
+  }
+
+  Future<void> _importBuys() async {
+    final picked = await FilePicker.pickFile(
+      dialogTitle: 'Import buys',
+      type: FileType.custom,
+      allowedExtensions: const ['json'],
+    );
+    if (!mounted || picked == null) return;
+
+    final String text;
+    try {
+      text = utf8.decode(await picked.readAsBytes());
+    } catch (_) {
+      if (!mounted) return;
+      await _showImportMessage('This file could not be read.');
+      return;
+    }
+    if (!mounted) return;
+
+    final calendar = context.read<CalendarController>();
+    final result = parseImportBuys(text, existing: calendar.series);
+    if (result.fileError == null && result.accepted.isNotEmpty) {
+      final saveError = await calendar.saveImported(result.accepted);
+      if (!mounted) return;
+      if (saveError != null) {
+        await _showImportMessage(saveError);
+        return;
+      }
+    }
+    if (!mounted) return;
+    await _showImportMessage(describeImport(result));
+  }
+
+  Future<void> _showImportMessage(String message) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import'),
+        content: SingleChildScrollView(child: Text(message)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -142,7 +192,7 @@ class _CalendarScreenState extends State<CalendarScreen> with WidgetsBindingObse
           ),
         ],
       ),
-      drawer: SideMenu(email: auth.email ?? ''),
+      drawer: SideMenu(email: auth.email ?? '', onImport: _importBuys),
       floatingActionButton: weekend
           ? null
           : FloatingActionButton(

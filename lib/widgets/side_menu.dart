@@ -6,9 +6,10 @@ import '../state/calendar_controller.dart';
 import '../state/theme_controller.dart';
 
 class SideMenu extends StatelessWidget {
-  const SideMenu({super.key, required this.email});
+  const SideMenu({super.key, required this.email, required this.onImport});
 
   final String email;
+  final VoidCallback onImport;
 
   @override
   Widget build(BuildContext context) {
@@ -22,16 +23,62 @@ class SideMenu extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           children: [
             SwitchListTile(
-              secondary: Icon(theme.mode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode),
+              secondary: Icon(
+                theme.mode == ThemeMode.dark
+                    ? Icons.dark_mode
+                    : Icons.light_mode,
+              ),
               title: const Text('Dark theme'),
               value: theme.mode == ThemeMode.dark,
               onChanged: theme.setDark,
             ),
             const Divider(),
-            _item(context, calendar, CalendarView.year, Icons.calendar_view_month, 'Year', scheme),
-            _item(context, calendar, CalendarView.month, Icons.calendar_month, 'Month', scheme),
-            _item(context, calendar, CalendarView.week, Icons.view_week, 'Week', scheme),
-            _item(context, calendar, CalendarView.day, Icons.view_day, 'Day', scheme),
+            _item(
+              context,
+              calendar,
+              CalendarView.year,
+              Icons.calendar_view_month,
+              'Year',
+              scheme,
+            ),
+            _item(
+              context,
+              calendar,
+              CalendarView.month,
+              Icons.calendar_month,
+              'Month',
+              scheme,
+            ),
+            _item(
+              context,
+              calendar,
+              CalendarView.week,
+              Icons.view_week,
+              'Week',
+              scheme,
+            ),
+            _item(
+              context,
+              calendar,
+              CalendarView.day,
+              Icons.view_day,
+              'Day',
+              scheme,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                leading: const Icon(Icons.upload_file),
+                title: const Text('Import'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onImport();
+                },
+              ),
+            ),
             const Divider(),
             ListTile(
               leading: CircleAvatar(
