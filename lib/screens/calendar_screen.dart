@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../logic/dates.dart';
+import '../logic/export_buys.dart';
 import '../logic/import_buys.dart';
 import '../logic/recurrence.dart';
+import '../services/save_export.dart';
 import '../state/auth_controller.dart';
 import '../state/calendar_controller.dart';
 import '../widgets/buy_sheet.dart';
@@ -118,7 +120,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       text = utf8.decode(await picked.readAsBytes());
     } catch (_) {
       if (!mounted) return;
-      await _showImportMessage('This file could not be read.');
+      await _showNotice('Import', 'This file could not be read.');
       return;
     }
     if (!mounted) return;
@@ -129,19 +131,41 @@ class _CalendarScreenState extends State<CalendarScreen>
       final saveError = await calendar.saveImported(result.accepted);
       if (!mounted) return;
       if (saveError != null) {
-        await _showImportMessage(saveError);
+        await _showNotice('Import', saveError);
         return;
       }
     }
     if (!mounted) return;
-    await _showImportMessage(describeImport(result));
+    await _showNotice('Import', describeImport(result));
   }
 
-  Future<void> _showImportMessage(String message) {
+  Future<void> _exportBuys() async {
+    final document = exportBuys(context.read<CalendarController>().series);
+    if (document == null) {
+      await _showNotice('Export', noBuysToExport);
+      return;
+    }
+
+    final Uri? saved;
+    try {
+      saved = await saveExportFile(
+        fileName: exportFileName(DateTime.now()),
+        bytes: utf8.encode(document.json),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      await _showNotice('Export', 'This file could not be saved.');
+      return;
+    }
+    if (!mounted || saved == null) return;
+    await _showNotice('Export', describeExport(document.count));
+  }
+
+  Future<void> _showNotice(String title, String message) {
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Import'),
+        title: Text(title),
         content: SingleChildScrollView(child: Text(message)),
         actions: [
           TextButton(
@@ -192,7 +216,11 @@ class _CalendarScreenState extends State<CalendarScreen>
           ),
         ],
       ),
-      drawer: SideMenu(email: auth.email ?? '', onImport: _importBuys),
+      drawer: SideMenu(
+        email: auth.email ?? '',
+        onImport: _importBuys,
+        onExport: _exportBuys,
+      ),
       floatingActionButton: weekend
           ? null
           : FloatingActionButton(

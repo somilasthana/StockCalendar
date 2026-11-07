@@ -6,10 +6,16 @@ import '../state/calendar_controller.dart';
 import '../state/theme_controller.dart';
 
 class SideMenu extends StatelessWidget {
-  const SideMenu({super.key, required this.email, required this.onImport});
+  const SideMenu({
+    super.key,
+    required this.email,
+    required this.onImport,
+    required this.onExport,
+  });
 
   final String email;
   final VoidCallback onImport;
+  final VoidCallback onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +82,20 @@ class SideMenu extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   onImport();
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                leading: const Icon(Icons.download),
+                title: const Text('Export'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onExport();
                 },
               ),
             ),
