@@ -161,6 +161,35 @@ class _CalendarScreenState extends State<CalendarScreen>
     await _showNotice('Export', describeExport(document.count));
   }
 
+  Future<void> _resetCalendar() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset Calendar'),
+        content: const Text(
+          'This will remove all entries, including repeats. Are you sure?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final message = await context.read<CalendarController>().resetCalendar();
+    if (!mounted || message == null) return;
+    await _showNotice('Reset Calendar', message);
+  }
+
   Future<void> _showNotice(String title, String message) {
     return showDialog<void>(
       context: context,
@@ -220,6 +249,7 @@ class _CalendarScreenState extends State<CalendarScreen>
         email: auth.email ?? '',
         onImport: _importBuys,
         onExport: _exportBuys,
+        onReset: _resetCalendar,
       ),
       floatingActionButton: weekend
           ? null

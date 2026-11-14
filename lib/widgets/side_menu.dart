@@ -11,11 +11,13 @@ class SideMenu extends StatelessWidget {
     required this.email,
     required this.onImport,
     required this.onExport,
+    required this.onReset,
   });
 
   final String email;
   final VoidCallback onImport;
   final VoidCallback onExport;
+  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +98,20 @@ class SideMenu extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   onExport();
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                leading: const Icon(Icons.restart_alt),
+                title: const Text('Reset Calendar'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onReset();
                 },
               ),
             ),

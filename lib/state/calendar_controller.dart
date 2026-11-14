@@ -168,6 +168,19 @@ class CalendarController extends ChangeNotifier {
     return null;
   }
 
+  /// Removes every buy, including repeats, and clears scheduled alerts.
+  Future<String?> resetCalendar() async {
+    final repo = _repo;
+    if (repo == null) return 'Could not reset the calendar.';
+    try {
+      await repo.clearAll();
+      await _notifications.cancelAll();
+    } catch (_) {
+      return 'Could not reset the calendar.';
+    }
+    return null;
+  }
+
   /// Appends imported buys in one write. Buys already on the phone stay.
   Future<String?> saveImported(List<BuySeries> items) async {
     if (items.isEmpty) return null;

@@ -56,6 +56,9 @@ class LocalSeriesRepository implements SeriesRepository {
   }
 
   @override
+  Future<void> clearAll() => _write([]);
+
+  @override
   Future<void> apply(String originalId, SeriesChange change) async {
     final items = _read();
     items.removeWhere((item) => item.id == originalId);

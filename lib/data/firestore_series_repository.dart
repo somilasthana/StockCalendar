@@ -40,6 +40,20 @@ class FirestoreSeriesRepository implements SeriesRepository {
   }
 
   @override
+  Future<void> clearAll() async {
+    while (true) {
+      final snapshot = await _series.limit(500).get();
+      if (snapshot.docs.isEmpty) return;
+      final batch = FirebaseFirestore.instance.batch();
+      for (final doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+      if (snapshot.docs.length < 500) return;
+    }
+  }
+
+  @override
   Future<void> apply(String originalId, SeriesChange change) async {
     final batch = FirebaseFirestore.instance.batch();
     final original = _series.doc(originalId);
