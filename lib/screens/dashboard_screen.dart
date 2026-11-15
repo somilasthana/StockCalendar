@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../logic/dashboard_format.dart';
+import '../logic/dashboard_metrics.dart';
 import '../models/buy_series.dart';
 import '../services/yahoo_price_service.dart';
 import '../state/calendar_controller.dart';
@@ -58,7 +60,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Buy performance')),
+      appBar: AppBar(title: const Text('Stock Calendar Insights')),
       body: !_dashboard.started
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
@@ -79,6 +81,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                       children: [
                         if (_dashboard.loading) _Progress(dashboard: _dashboard),
+                        _PortfolioCount(count: _dashboard.buys.length),
                         for (final line in _notices(_dashboard))
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
@@ -91,14 +94,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ),
                         DashboardCard(
-                          title: 'How often you buy',
+                          title: 'Your Buying Pattern',
                           caption:
                               'Each slice is a symbol. Tap a slice for the stock, count, and share.',
                           borderColor: howOftenBorder,
                           child: FrequencyDonut(counts: _dashboard.counts),
                         ),
                         DashboardCard(
-                          title: 'Price on buy days',
+                          title: 'Amount Invested Distribution',
                           caption:
                               'Each bar adds the daily price of every symbol you bought, once per symbol per day.',
                           borderColor: priceOnBuyBorder,
@@ -112,7 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         DashboardCard(
-                          title: 'Price path',
+                          title: 'Price Movement',
                           caption:
                               'Daily price from the first buy through the latest trading day, including days with no buy.',
                           borderColor: pricePathBorder,
@@ -130,9 +133,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         DashboardCard(
-                          title: 'Against your average buy',
+                          title: 'Your Portfolio Gains/Losses',
                           caption:
-                              'The column runs from the average price on your buy days to the latest price.',
+                              'Comparing average bought price with current stock price',
                           borderColor: againstAverageBorder,
                           child: _pricedChild(
                             _dashboard,
@@ -142,6 +145,88 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
             ),
+    );
+  }
+}
+
+class _PortfolioCount extends StatelessWidget {
+  const _PortfolioCount({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      color: chartSurface(brightness, scheme),
+      surfaceTintColor: Colors.transparent,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: howOftenBorder, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Text.rich(
+          TextSpan(
+            style: Theme.of(context).textTheme.titleMedium,
+            children: [
+              const TextSpan(text: 'Total Number of Stocks in Portfolio: '),
+              TextSpan(
+                text: '$count',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Kept for a later gain/loss total. Not shown on the screen.
+// ignore: unused_element
+class _GainSummary extends StatelessWidget {
+  const _GainSummary({required this.gain});
+
+  final PortfolioGain gain;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final scheme = Theme.of(context).colorScheme;
+    final down = paise(gain.amount) < 0;
+    final color = down ? lossColor(brightness) : gainColor(brightness);
+    final percent = gain.percent;
+    final value = percent == null
+        ? fullRupee(gain.amount)
+        : '${fullRupee(gain.amount)} (${percent.toStringAsFixed(1)}%)';
+    return Card(
+      elevation: 0,
+      color: chartSurface(brightness, scheme),
+      surfaceTintColor: Colors.transparent,
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: color, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Text.rich(
+          TextSpan(
+            style: Theme.of(context).textTheme.titleMedium,
+            children: [
+              const TextSpan(text: 'Gain/Losses: '),
+              TextSpan(
+                text: value,
+                style: TextStyle(color: color, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

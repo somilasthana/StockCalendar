@@ -22,9 +22,28 @@ class PriceHistogram extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final brightness = Theme.of(context).brightness;
-    final maxY = bars.isEmpty
-        ? 4.0
-        : niceMax(bars.map((bar) => bar.total).reduce((a, b) => a > b ? a : b));
+    const chartHeight = 240.0;
+    const bottomReserved = 36.0;
+    final labelStyle = TextStyle(
+      fontSize: 10,
+      height: 1,
+      color: scheme.onSurface,
+      fontWeight: FontWeight.w600,
+    );
+    final labels = [for (final bar in bars) shortRupee(bar.total)];
+    var longest = 0.0;
+    for (final label in labels) {
+      final width = measureChartLabel(label, labelStyle).width;
+      if (width > longest) longest = width;
+    }
+    final peak = bars.isEmpty
+        ? 0.0
+        : bars.map((bar) => bar.total).reduce((a, b) => a > b ? a : b);
+    final maxY = axisMaxForTopLabel(
+      peak: peak,
+      labelPixels: longest,
+      plotHeight: chartHeight - bottomReserved,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -39,13 +58,6 @@ class PriceHistogram extends StatelessWidget {
           onSelectionChanged: (next) => onSpan(next.first),
         ),
         const SizedBox(height: 12),
-        Text(
-          'Sum of unit avg stock prices (₹) for that period',
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 8),
         if (bars.isEmpty)
           const SizedBox(
             height: 120,
@@ -59,7 +71,8 @@ class PriceHistogram extends StatelessWidget {
             alignEnd: true,
             minY: 0,
             maxY: maxY,
-            bottomReserved: 36,
+            height: chartHeight,
+            bottomReserved: bottomReserved,
             formatTick: (value) => axisPrice(value, maxY),
             hint: 'Swipe sideways for older periods.',
             builder: (width, slot) {
@@ -88,6 +101,7 @@ class PriceHistogram extends StatelessWidget {
                     ),
                   ),
                   titlesData: chartTitles(
+                    bottomReserved: bottomReserved,
                     bottom: (value, meta) {
                       final index = value.toInt();
                       if (index < 0 || index >= bars.length) {
@@ -124,6 +138,7 @@ class PriceHistogram extends StatelessWidget {
                             borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(6),
                             ),
+                            label: _sumLabel(labels[i], labelStyle),
                           ),
                         ],
                       ),
@@ -135,4 +150,15 @@ class PriceHistogram extends StatelessWidget {
       ],
     );
   }
+}
+
+BarChartRodLabel _sumLabel(String text, TextStyle style) {
+  final size = measureChartLabel(text, style);
+  return BarChartRodLabel(
+    show: true,
+    text: text,
+    angle: -90,
+    offset: labelAboveBarOffset(textWidth: size.width, textHeight: size.height),
+    style: style,
+  );
 }

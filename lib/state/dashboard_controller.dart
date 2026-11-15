@@ -43,6 +43,8 @@ class DashboardController extends ChangeNotifier {
 
   RangeReport get ranges => rangeReport(buys, prices, today);
 
+  PortfolioGain get gain => portfolioGain(buys, prices, today);
+
   List<LinePoint> lineFor(String? symbol) {
     if (symbol == null) return const [];
     final first = firstBuyOf(buys, symbol);

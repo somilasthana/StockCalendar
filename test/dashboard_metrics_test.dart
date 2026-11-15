@@ -111,6 +111,66 @@ void main() {
     );
   });
 
+  test('portfolio gain marks every priced buy to the latest price', () {
+    final prices = {
+      'INFY': [
+        ohlc(DateTime(2026, 11, 10), 3, 3, 3, 3),
+        ohlc(DateTime(2026, 11, 11), 5, 5, 5, 5),
+        ohlc(DateTime(2026, 11, 12), 7, 7, 7, 7),
+        ohlc(DateTime(2026, 11, 14), 10, 10, 10, 10),
+      ],
+      'RELIANCE': [
+        ohlc(DateTime(2026, 11, 10), 13, 13, 13, 13),
+        ohlc(DateTime(2026, 11, 11), 15, 15, 15, 15),
+        ohlc(DateTime(2026, 11, 12), 17, 17, 17, 17),
+        ohlc(DateTime(2026, 11, 14), 20, 20, 20, 20),
+      ],
+    };
+    final gain = portfolioGain(
+      [
+        buy('INFY', DateTime(2026, 11, 10)),
+        buy('INFY', DateTime(2026, 11, 11)),
+        buy('INFY', DateTime(2026, 11, 12)),
+        buy('RELIANCE', DateTime(2026, 11, 10)),
+        buy('RELIANCE', DateTime(2026, 11, 11)),
+        buy('RELIANCE', DateTime(2026, 11, 12)),
+      ],
+      prices,
+      DateTime(2026, 11, 15),
+    );
+    expect(gain.invested, 60);
+    expect(gain.current, 90);
+    expect(gain.amount, 30);
+    expect(gain.percent, closeTo(50, 0.001));
+    expect(gain.pricedBuys, 6);
+  });
+
+  test('a buy day with no price is left out of invested and current', () {
+    final gain = portfolioGain(
+      [
+        buy('INFY', DateTime(2026, 11, 10)),
+        buy('INFY', DateTime(2026, 11, 11)),
+        buy('INFY', DateTime(2026, 11, 12)),
+      ],
+      {
+        'INFY': [
+          ohlc(DateTime(2026, 11, 10), 3, 3, 3, 3),
+          ohlc(DateTime(2026, 11, 12), 7, 7, 7, 7),
+          ohlc(DateTime(2026, 11, 14), 10, 10, 10, 10),
+        ],
+      },
+      DateTime(2026, 11, 15),
+    );
+    expect(gain.invested, 10);
+    expect(gain.current, 20);
+    expect(gain.pricedBuys, 2);
+    expect(gain.skippedBuyDays, 1);
+    expect(exactDayPrice(
+      [ohlc(DateTime(2026, 11, 10), 3, 3, 3, 3)],
+      DateTime(2026, 11, 11),
+    ), isNull);
+  });
+
   test('Infosys range is 7 to 10 and green when the latest price is higher', () {
     final bars = [
       ohlc(DateTime(2026, 11, 9), 5, 7, 9, 11),

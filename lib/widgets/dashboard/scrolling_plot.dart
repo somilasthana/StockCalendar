@@ -220,6 +220,44 @@ FlTitlesData chartTitles({
   );
 }
 
+Size measureChartLabel(
+  String text,
+  TextStyle style, {
+  TextScaler textScaler = TextScaler.noScaling,
+}) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: TextDirection.ltr,
+    textScaler: textScaler,
+    maxLines: 1,
+  )..layout();
+  final size = painter.size;
+  painter.dispose();
+  return size;
+}
+
+/// Rotated rod label sitting just above the bar, centered on that bar.
+Offset labelAboveBarOffset({
+  required double textWidth,
+  required double textHeight,
+  double gap = 4,
+}) {
+  return Offset(0, textWidth / 2 - textHeight / 2 + gap);
+}
+
+/// Raises the axis enough for a vertical label above the tallest bar.
+double axisMaxForTopLabel({
+  required double peak,
+  required double labelPixels,
+  required double plotHeight,
+  double gap = 6,
+}) {
+  if (plotHeight <= 0) return niceMax(peak);
+  final fraction = ((labelPixels + gap) / plotHeight).clamp(0.0, 0.6);
+  final room = peak <= 0 ? 4.0 : peak / (1 - fraction);
+  return niceMax(room);
+}
+
 String axisPrice(double value, double span) {
   if (span < 20 && value.abs() < 10000) {
     return '₹${value.toStringAsFixed(value.abs() >= 100 ? 0 : 2)}';

@@ -24,9 +24,33 @@ class RangeColumnChart extends StatelessWidget {
     final peak = points
         .map((point) => point.upper)
         .reduce((a, b) => a > b ? a : b);
-    final maxY = niceMax(peak);
     const chartHeight = 240.0;
-    const bottomReserved = 44.0;
+    const bottomReserved = 32.0;
+    const labelGap = 14.0;
+    final textScaler = MediaQuery.textScalerOf(context);
+    final labelStyle = DefaultTextStyle.of(context).style.merge(
+      TextStyle(
+        fontSize: 10,
+        height: 1,
+        color: scheme.onSurface,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    var longest = 0.0;
+    for (final point in points) {
+      final width = measureChartLabel(
+        _rangeLabel(point),
+        labelStyle,
+        textScaler: textScaler,
+      ).width;
+      if (width > longest) longest = width;
+    }
+    final maxY = axisMaxForTopLabel(
+      peak: peak,
+      labelPixels: longest,
+      plotHeight: chartHeight - bottomReserved,
+      gap: labelGap,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -100,9 +124,9 @@ class RangeColumnChart extends StatelessWidget {
                           points[i],
                           barWidth,
                           brightness,
-                          scheme,
-                          maxY,
-                          chartHeight - bottomReserved,
+                          labelStyle,
+                          textScaler,
+                          labelGap,
                         ),
                       ],
                     ),
@@ -135,9 +159,9 @@ BarChartRodData _rod(
   RangePoint point,
   double barWidth,
   Brightness brightness,
-  ColorScheme scheme,
-  double maxY,
-  double plotHeight,
+  TextStyle labelStyle,
+  TextScaler textScaler,
+  double labelGap,
 ) {
   final color = point.flat
       ? Colors.transparent
@@ -145,13 +169,7 @@ BarChartRodData _rod(
           ? gainColor(brightness)
           : lossColor(brightness);
   final label = _rangeLabel(point);
-  final style = TextStyle(
-    fontSize: 10,
-    color: scheme.onSurface,
-    fontWeight: FontWeight.w600,
-    height: 1,
-  );
-  final text = _textSize(label, style);
+  final text = measureChartLabel(label, labelStyle, textScaler: textScaler);
   return BarChartRodData(
     fromY: point.flat ? point.current : point.lower,
     toY: point.flat ? point.current : point.upper,
@@ -163,16 +181,12 @@ BarChartRodData _rod(
       show: true,
       text: label,
       angle: -90,
-      offset: _labelOffset(
-        barWidth: point.flat ? 0 : barWidth,
+      offset: labelAboveBarOffset(
         textWidth: text.width,
         textHeight: text.height,
-        upper: point.upper,
-        lower: point.flat ? point.current : point.lower,
-        maxY: maxY,
-        plotHeight: plotHeight,
+        gap: labelGap,
       ),
-      style: style,
+      style: labelStyle,
     ),
   );
 }
@@ -181,42 +195,6 @@ BarChartRodData _rod(
 String _rangeLabel(RangePoint point) {
   if (point.flat) return shortRupee(point.current);
   return '${shortRupee(point.lower)} - ${shortRupee(point.upper)}';
-}
-
-Size _textSize(String text, TextStyle style) {
-  final painter = TextPainter(
-    text: TextSpan(text: text, style: style),
-    textDirection: TextDirection.ltr,
-    maxLines: 1,
-  )..layout();
-  final size = painter.size;
-  painter.dispose();
-  return size;
-}
-
-/// Places the rotated label beside the column, reading upward from low to high.
-Offset _labelOffset({
-  required double barWidth,
-  required double textWidth,
-  required double textHeight,
-  required double upper,
-  required double lower,
-  required double maxY,
-  required double plotHeight,
-}) {
-  final span = maxY == 0 ? 0.0 : (upper - lower) / maxY * plotHeight;
-  final tipFromTop = maxY == 0 ? plotHeight : (1 - upper / maxY) * plotHeight;
-  var centerFromTip = span / 2;
-  final halfLabel = textWidth / 2;
-  final topIfCentered = tipFromTop + centerFromTip - halfLabel;
-  if (topIfCentered < 2) centerFromTip += 2 - topIfCentered;
-  final bottomIfCentered = tipFromTop + centerFromTip + halfLabel;
-  final floor = plotHeight - 2;
-  if (bottomIfCentered > floor) centerFromTip -= bottomIfCentered - floor;
-  return Offset(
-    barWidth / 2 + 4 + textHeight / 2,
-    -(centerFromTip + textHeight / 2),
-  );
 }
 
 String _tip(RangePoint point) {

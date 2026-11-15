@@ -116,6 +116,37 @@ class RangePoint {
   }
 }
 
+class PortfolioGain {
+  const PortfolioGain({
+    required this.invested,
+    required this.current,
+    required this.pricedBuys,
+    required this.unpricedSymbols,
+    required this.skippedBuyDays,
+  });
+
+  /// Sum of the open/high/low/close average on each buy day that has a price.
+  final double invested;
+
+  /// Latest average price of each symbol, once for every priced buy day.
+  final double current;
+
+  final int pricedBuys;
+  final List<String> unpricedSymbols;
+
+  /// Buy days with no price on that exact date. Days on an unpriced symbol
+  /// are not included.
+  final int skippedBuyDays;
+
+  double get amount => current - invested;
+
+  /// Change against the amount invested. Null when nothing was invested.
+  double? get percent {
+    if (invested == 0) return null;
+    return (current - invested) / invested * 100;
+  }
+}
+
 class RangeReport {
   const RangeReport({
     required this.points,
@@ -355,6 +386,71 @@ RangeReport rangeReport(
     unpricedSymbols: unpriced,
     skippedBuyDays: skipped,
   );
+}
+
+/// One unit per buy day. A day with no price is left out of both totals.
+///
+/// [current] uses the latest bar on or before [today], repeated once for
+/// each buy day that itself has a price.
+PortfolioGain portfolioGain(
+  List<DayBuy> buys,
+  Map<String, List<DailyBar>> prices,
+  DateTime today,
+) {
+  final bySymbol = <String, List<DateTime>>{};
+  for (final buy in buys) {
+    bySymbol.putIfAbsent(buy.series.symbol, () => []).add(dateOnly(buy.date));
+  }
+  final end = dateOnly(today);
+  final symbols = bySymbol.keys.toList()..sort();
+  var invested = 0.0;
+  var current = 0.0;
+  var pricedBuys = 0;
+  final unpriced = <String>[];
+  var skipped = 0;
+  for (final symbol in symbols) {
+    final bars = prices[symbol] ?? const <DailyBar>[];
+    final latest = _priceFor(bars, end);
+    var symbolInvested = 0.0;
+    var symbolBuys = 0;
+    var missed = 0;
+    for (final date in bySymbol[symbol]!) {
+      final price = exactDayPrice(bars, date);
+      if (price == null) {
+        missed++;
+        continue;
+      }
+      symbolInvested += price;
+      symbolBuys++;
+    }
+    if (latest == null || symbolBuys == 0) {
+      unpriced.add(symbol);
+      continue;
+    }
+    skipped += missed;
+    invested += symbolInvested;
+    current += latest * symbolBuys;
+    pricedBuys += symbolBuys;
+  }
+  return PortfolioGain(
+    invested: invested,
+    current: current,
+    pricedBuys: pricedBuys,
+    unpricedSymbols: unpriced,
+    skippedBuyDays: skipped,
+  );
+}
+
+/// Average price on [day] itself. A bar from another date is not used.
+double? exactDayPrice(List<DailyBar>? bars, DateTime day) {
+  if (bars == null || bars.isEmpty) return null;
+  final target = dateOnly(day);
+  for (final bar in bars) {
+    if (dateOnly(bar.date) != target) continue;
+    final price = barPrice(bar);
+    if (price != null) return price;
+  }
+  return null;
 }
 
 DateTime? firstBuyOf(List<DayBuy> buys, String symbol) {
