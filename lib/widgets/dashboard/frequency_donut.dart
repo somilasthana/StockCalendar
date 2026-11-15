@@ -15,6 +15,22 @@ class FrequencyDonut extends StatefulWidget {
 
 class _FrequencyDonutState extends State<FrequencyDonut> {
   int? _touched;
+  Offset? _popupAt;
+
+  void _clear() {
+    if (_touched == null && _popupAt == null) return;
+    setState(() {
+      _touched = null;
+      _popupAt = null;
+    });
+  }
+
+  void _show(int index, Offset at) {
+    setState(() {
+      _touched = index;
+      _popupAt = at;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,121 +39,153 @@ class _FrequencyDonutState extends State<FrequencyDonut> {
     final touched = _touched != null && _touched! < widget.counts.length
         ? _touched
         : null;
-    return Column(
-      children: [
-        SizedBox(
-          height: 220,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              PieChart(
-                PieChartData(
-                  startDegreeOffset: -90,
-                  sectionsSpace: 3,
-                  centerSpaceRadius: 62,
-                  pieTouchData: PieTouchData(
-                    touchCallback: (event, response) {
-                      final index = response?.touchedSection?.touchedSectionIndex;
-                      setState(() {
-                        _touched = index != null && index >= 0 ? index : null;
-                      });
-                    },
+    final popupAt = touched == null ? null : _popupAt;
+    return TapRegion(
+      onTapOutside: (_) => _clear(),
+      child: MouseRegion(
+        onExit: (_) => _clear(),
+        child: SizedBox(
+          height: 240,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  PieChart(
+                    PieChartData(
+                      startDegreeOffset: -90,
+                      sectionsSpace: 3,
+                      centerSpaceRadius: 62,
+                      pieTouchData: PieTouchData(
+                        touchCallback: (event, response) {
+                          final index =
+                              response?.touchedSection?.touchedSectionIndex;
+                          final hit = index != null && index >= 0 ? index : null;
+                          if (event is FlPointerHoverEvent) {
+                            if (_touched != null && hit != _touched) _clear();
+                            return;
+                          }
+                          if (event is! FlTapUpEvent) return;
+                          if (hit == null || response == null) {
+                            _clear();
+                            return;
+                          }
+                          _show(hit, response.touchLocation);
+                        },
+                      ),
+                      sections: [
+                        for (var i = 0; i < widget.counts.length; i++)
+                          PieChartSectionData(
+                            value: widget.counts[i].count.toDouble(),
+                            color: dashboardColor(i),
+                            radius: touched == i ? 58 : 48,
+                            showTitle: false,
+                          ),
+                      ],
+                    ),
                   ),
-                  sections: [
-                    for (var i = 0; i < widget.counts.length; i++)
-                      PieChartSectionData(
-                        value: widget.counts[i].count.toDouble(),
-                        color: dashboardColor(i),
-                        radius: touched == i ? 58 : 48,
-                        showTitle: false,
-                      ),
-                  ],
-                ),
-              ),
-              IgnorePointer(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '$total',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                  IgnorePointer(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$total',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        Text(
+                          total == 1 ? 'buy' : 'buys',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      total == 1 ? 'buy' : 'buys',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                  ),
+                  if (touched != null && popupAt != null)
+                    _SlicePopup(
+                      bounds: constraints.biggest,
+                      anchor: popupAt,
+                      color: dashboardColor(touched),
+                      row: widget.counts[touched],
                     ),
-                  ],
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
-        const SizedBox(height: 8),
-        for (var i = 0; i < widget.counts.length; i++)
-          _LegendRow(
-            color: dashboardColor(i),
-            symbol: widget.counts[i].symbol,
-            count: widget.counts[i].count,
-            percent: (widget.counts[i].share * 100).round(),
-            highlighted: touched == i,
-          ),
-      ],
+      ),
     );
   }
 }
 
-class _LegendRow extends StatelessWidget {
-  const _LegendRow({
+class _SlicePopup extends StatelessWidget {
+  const _SlicePopup({
+    required this.bounds,
+    required this.anchor,
     required this.color,
-    required this.symbol,
-    required this.count,
-    required this.percent,
-    required this.highlighted,
+    required this.row,
   });
 
+  final Size bounds;
+  final Offset anchor;
   final Color color;
-  final String symbol;
-  final int count;
-  final int percent;
-  final bool highlighted;
+  final SymbolCount row;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: highlighted ? scheme.surfaceContainerHighest : null,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(symbol, style: Theme.of(context).textTheme.titleSmall),
-          ),
-          Text('$count', style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 44,
-            child: Text(
-              '$percent%',
-              textAlign: TextAlign.end,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
+    final brightness = Theme.of(context).brightness;
+    const width = 188.0;
+    final maxLeft = bounds.width - width;
+    final left = maxLeft <= 0
+        ? 0.0
+        : (anchor.dx - width / 2).clamp(0.0, maxLeft);
+    final top = (anchor.dy - 78).clamp(0.0, bounds.height - 8);
+    final name = row.name.trim().isEmpty ? row.symbol : row.name.trim();
+    final style = TextStyle(
+      fontSize: 12,
+      height: 1.35,
+      color: scheme.onSurface,
+    );
+    return Positioned(
+      left: left,
+      top: top,
+      width: width,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: chartSurface(brightness, scheme),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Stock Name: $name', style: style),
+                Text('Cnt: ${row.count}', style: style),
+                Text('Percent (%): ${_percent(row.share)}', style: style),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
+}
+
+String _percent(double share) {
+  final text = (share * 100).toStringAsFixed(1);
+  if (text.endsWith('.0')) return text.substring(0, text.length - 2);
+  return text;
 }

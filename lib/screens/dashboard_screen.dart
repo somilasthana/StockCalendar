@@ -93,13 +93,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         DashboardCard(
                           title: 'How often you buy',
                           caption:
-                              'Each slice is a symbol. Size is the number of buy days through today.',
+                              'Each slice is a symbol. Tap a slice for the stock, count, and share.',
+                          borderColor: howOftenBorder,
                           child: FrequencyDonut(counts: _dashboard.counts),
                         ),
                         DashboardCard(
                           title: 'Price on buy days',
                           caption:
                               'Each bar adds the daily price of every symbol you bought, once per symbol per day.',
+                          borderColor: priceOnBuyBorder,
                           child: _pricedChild(
                             _dashboard,
                             PriceHistogram(
@@ -113,6 +115,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           title: 'Price path',
                           caption:
                               'Daily price from the first buy through the latest trading day, including days with no buy.',
+                          borderColor: pricePathBorder,
                           child: _pricedChild(
                             _dashboard,
                             PriceLineChart(
@@ -130,6 +133,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           title: 'Against your average buy',
                           caption:
                               'The column runs from the average price on your buy days to the latest price.',
+                          borderColor: againstAverageBorder,
                           child: _pricedChild(
                             _dashboard,
                             RangeColumnChart(points: _dashboard.ranges.points),

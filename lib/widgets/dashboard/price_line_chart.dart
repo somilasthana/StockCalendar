@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../logic/dashboard_format.dart';
 import '../../logic/dashboard_metrics.dart';
 import '../../logic/dates.dart';
+import 'dashboard_style.dart';
 import 'scrolling_plot.dart';
 
 class PriceLineChart extends StatelessWidget {
@@ -26,7 +27,7 @@ class PriceLineChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final lineColor = scheme.primary;
-    final cardColor = scheme.surfaceContainerLow;
+    final cardColor = chartSurface(Theme.of(context).brightness, scheme);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -15,6 +15,15 @@ const dashboardPalette = [
 
 Color dashboardColor(int index) => dashboardPalette[index % dashboardPalette.length];
 
+const howOftenBorder = Color(0xFF5B5BD6);
+const priceOnBuyBorder = Color(0xFF1A73E8);
+const pricePathBorder = Color(0xFF0F9D8A);
+const againstAverageBorder = Color(0xFFE4537C);
+
+Color chartSurface(Brightness brightness, ColorScheme scheme) {
+  return brightness == Brightness.light ? Colors.white : scheme.surface;
+}
+
 Color gainColor(Brightness brightness) {
   return brightness == Brightness.dark
       ? const Color(0xFF3DDC84)
@@ -38,21 +47,28 @@ class DashboardCard extends StatelessWidget {
     super.key,
     required this.title,
     required this.caption,
+    required this.borderColor,
     required this.child,
   });
 
   final String title;
   final String caption;
+  final Color borderColor;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final brightness = Theme.of(context).brightness;
     return Card(
       elevation: 0,
-      color: scheme.surfaceContainerLow,
+      color: chartSurface(brightness, scheme),
+      surfaceTintColor: Colors.transparent,
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: borderColor, width: 1.5),
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
         child: Column(

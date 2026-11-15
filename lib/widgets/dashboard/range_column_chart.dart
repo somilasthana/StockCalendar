@@ -25,6 +25,8 @@ class RangeColumnChart extends StatelessWidget {
         .map((point) => point.upper)
         .reduce((a, b) => a > b ? a : b);
     final maxY = niceMax(peak);
+    const chartHeight = 240.0;
+    const bottomReserved = 44.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -35,7 +37,8 @@ class RangeColumnChart extends StatelessWidget {
           alignEnd: false,
           minY: 0,
           maxY: maxY,
-          bottomReserved: 32,
+          height: chartHeight,
+          bottomReserved: bottomReserved,
           formatTick: (value) => axisPrice(value, maxY),
           hint: 'Swipe sideways for more symbols.',
           builder: (width, slot) {
@@ -63,7 +66,7 @@ class RangeColumnChart extends StatelessWidget {
                   ),
                 ),
                 titlesData: chartTitles(
-                  bottomReserved: 32,
+                  bottomReserved: bottomReserved,
                   bottom: (value, meta) {
                     final index = value.toInt();
                     if (index < 0 || index >= points.length) {
@@ -93,7 +96,14 @@ class RangeColumnChart extends StatelessWidget {
                     BarChartGroupData(
                       x: i,
                       barRods: [
-                        _rod(points[i], barWidth, brightness, scheme),
+                        _rod(
+                          points[i],
+                          barWidth,
+                          brightness,
+                          scheme,
+                          maxY,
+                          chartHeight - bottomReserved,
+                        ),
                       ],
                     ),
                 ],
@@ -126,15 +136,22 @@ BarChartRodData _rod(
   double barWidth,
   Brightness brightness,
   ColorScheme scheme,
+  double maxY,
+  double plotHeight,
 ) {
   final color = point.flat
       ? Colors.transparent
       : point.above
           ? gainColor(brightness)
           : lossColor(brightness);
-  final label = point.flat
-      ? 'even'
-      : '${shortRupee(point.averagePurchase)}→${shortRupee(point.current)}';
+  final label = _rangeLabel(point);
+  final style = TextStyle(
+    fontSize: 10,
+    color: scheme.onSurface,
+    fontWeight: FontWeight.w600,
+    height: 1,
+  );
+  final text = _textSize(label, style);
   return BarChartRodData(
     fromY: point.flat ? point.current : point.lower,
     toY: point.flat ? point.current : point.upper,
@@ -145,12 +162,60 @@ BarChartRodData _rod(
     label: BarChartRodLabel(
       show: true,
       text: label,
-      style: TextStyle(
-        fontSize: 10,
-        color: scheme.onSurface,
-        fontWeight: FontWeight.w600,
+      angle: -90,
+      offset: _labelOffset(
+        barWidth: point.flat ? 0 : barWidth,
+        textWidth: text.width,
+        textHeight: text.height,
+        upper: point.upper,
+        lower: point.flat ? point.current : point.lower,
+        maxY: maxY,
+        plotHeight: plotHeight,
       ),
+      style: style,
     ),
+  );
+}
+
+/// Low price, then high price. A flat column shows the single price.
+String _rangeLabel(RangePoint point) {
+  if (point.flat) return shortRupee(point.current);
+  return '${shortRupee(point.lower)} - ${shortRupee(point.upper)}';
+}
+
+Size _textSize(String text, TextStyle style) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: TextDirection.ltr,
+    maxLines: 1,
+  )..layout();
+  final size = painter.size;
+  painter.dispose();
+  return size;
+}
+
+/// Places the rotated label beside the column, reading upward from low to high.
+Offset _labelOffset({
+  required double barWidth,
+  required double textWidth,
+  required double textHeight,
+  required double upper,
+  required double lower,
+  required double maxY,
+  required double plotHeight,
+}) {
+  final span = maxY == 0 ? 0.0 : (upper - lower) / maxY * plotHeight;
+  final tipFromTop = maxY == 0 ? plotHeight : (1 - upper / maxY) * plotHeight;
+  var centerFromTip = span / 2;
+  final halfLabel = textWidth / 2;
+  final topIfCentered = tipFromTop + centerFromTip - halfLabel;
+  if (topIfCentered < 2) centerFromTip += 2 - topIfCentered;
+  final bottomIfCentered = tipFromTop + centerFromTip + halfLabel;
+  final floor = plotHeight - 2;
+  if (bottomIfCentered > floor) centerFromTip -= bottomIfCentered - floor;
+  return Offset(
+    barWidth / 2 + 4 + textHeight / 2,
+    -(centerFromTip + textHeight / 2),
   );
 }
 
