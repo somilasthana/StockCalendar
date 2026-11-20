@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../screens/account_screen.dart';
 import '../screens/dashboard_screen.dart';
+import '../screens/ledger_screen.dart';
 import '../state/calendar_controller.dart';
 import '../state/theme_controller.dart';
 
@@ -115,6 +116,23 @@ class SideMenu extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                leading: const Icon(Icons.history),
+                title: const Text('Retro'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LedgerScreen()),
                   );
                 },
               ),
