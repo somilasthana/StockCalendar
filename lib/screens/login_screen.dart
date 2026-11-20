@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Icon(Icons.calendar_month, size: 56, color: scheme.primary),
                   const SizedBox(height: 12),
                   Text(
-                    'StockCalendar Lite',
+                    'Stock Calendar AI',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),

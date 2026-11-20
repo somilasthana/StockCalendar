@@ -15,7 +15,7 @@ class AccountScreen extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('StockCalendar Lite')),
+      appBar: AppBar(title: const Text('Stock Calendar AI')),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [

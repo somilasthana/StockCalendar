@@ -35,13 +35,28 @@ Future<void> pressSave(WidgetTester tester) async {
 }
 
 Future<void> chooseView(WidgetTester tester, String label) async {
-  tester.state<NavigatorState>(find.byType(Navigator).first).popUntil((route) => route.isFirst);
+  tester.state<NavigatorState>(find.byType(Navigator).first).popUntil(
+    (route) => route.settings.name == '/calendar' || route.isFirst,
+  );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 200));
   tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));
   tester.widget<ListTile>(find.widgetWithText(ListTile, label)).onTap!.call();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
+
+Future<void> enterCalendar(WidgetTester tester) async {
+  final start = find.text("Let's Get Started");
+  await tester.ensureVisible(start);
+  await tester.tap(start);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+  final card = find.text('Personal Stock Calendar');
+  await tester.ensureVisible(card);
+  await tester.tap(card);
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 300));
 }
@@ -69,9 +84,10 @@ void main() {
   testWidgets('sign in, add a buy, and open the other views', (tester) async {
     await pumpApp(tester);
 
-    expect(find.text('StockCalendar Lite'), findsOneWidget);
+    expect(find.text('Stock Calendar AI'), findsOneWidget);
     expect(find.text('Secret Key'), findsOneWidget);
     await register(tester);
+    await enterCalendar(tester);
 
     final today = dateOnly(DateTime.now());
     expect(find.text(monthTitle(today)), findsOneWidget);
@@ -125,6 +141,7 @@ void main() {
   testWidgets('empty symbol is rejected', (tester) async {
     await pumpApp(tester);
     await register(tester);
+    await enterCalendar(tester);
 
     final openDay = weekdayNear(dateOnly(DateTime.now()));
     await tester.tap(find.text('${openDay.day}').hitTestable());
@@ -132,6 +149,30 @@ void main() {
     await tester.enterText(find.byType(TextField).at(0), 'Reliance');
     await pressSave(tester);
     expect(find.text('Enter the stock symbol.'), findsOneWidget);
+  });
+
+  testWidgets('home control returns to the tool cards', (tester) async {
+    await pumpApp(tester);
+    await register(tester);
+    await enterCalendar(tester);
+    expect(find.text('Personal Stock Calendar').hitTestable(), findsNothing);
+
+    await tester.tap(find.byTooltip('Home'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Personal Stock Calendar').hitTestable(), findsOneWidget);
+
+    await tester.tap(find.text('Personal Stock Calendar').hitTestable());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    tester.widget<ListTile>(find.widgetWithText(ListTile, 'Home')).onTap!.call();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Personal Stock Calendar').hitTestable(), findsOneWidget);
+    expect(find.byTooltip('Open navigation menu').hitTestable(), findsNothing);
   });
 
   testWidgets('wrong secret key stays on registration', (tester) async {

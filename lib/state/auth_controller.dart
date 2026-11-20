@@ -18,6 +18,19 @@ class AuthController extends ChangeNotifier {
   String? error;
   String? notice;
 
+  bool get needsIntro {
+    final id = uid;
+    if (id == null) return false;
+    return _prefs.getBool('intro_seen_$id') != true;
+  }
+
+  Future<void> completeIntro() async {
+    final id = uid;
+    if (id == null) return;
+    await _prefs.setBool('intro_seen_$id', true);
+    notifyListeners();
+  }
+
   bool get hasLocalAccount {
     final savedEmail = _prefs.getString('local_email');
     final savedLock = _prefs.getString('local_password');

@@ -50,6 +50,10 @@ void main() {
     await tester.enterText(find.byType(TextField).at(1), '1234');
     await tester.enterText(find.byType(TextField).at(2), secret);
     await tapText(tester, 'Registration');
+    await waitFor(tester, find.text("Let's Get Started"));
+    await tapText(tester, "Let's Get Started");
+    await waitFor(tester, find.text('Personal Stock Calendar'));
+    await tapText(tester, 'Personal Stock Calendar');
     await waitFor(tester, find.text(monthTitle(dateOnly(DateTime.now()))));
 
     final today = dateOnly(DateTime.now());
@@ -85,7 +89,7 @@ void main() {
     await waitFor(tester, find.text('${openDay.year}'));
 
     await openMenu(tester);
-    await tapText(tester, 'StockCalendar Lite');
+    await tapText(tester, 'Stock Calendar AI');
     await waitFor(tester, find.text('owner@example.com'));
     await tapText(tester, 'Send a test alert');
     await waitFor(tester, find.text('Test alert in about 10 seconds.'));

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'screens/calendar_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/welcome_screen.dart';
 import 'state/auth_controller.dart';
 import 'state/calendar_controller.dart';
 import 'state/theme_controller.dart';
@@ -31,7 +31,7 @@ class MyStockApp extends StatelessWidget {
       child: Consumer<ThemeController>(
         builder: (context, themeController, _) {
           return MaterialApp(
-            title: 'StockCalendar Lite',
+            title: 'Stock Calendar AI',
             debugShowCheckedModeBanner: false,
             theme: buildLightTheme(),
             darkTheme: buildDarkTheme(),
@@ -54,6 +54,7 @@ class RootScreen extends StatelessWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (auth.uid == null) return const LoginScreen();
-    return const CalendarScreen();
+    if (auth.needsIntro) return const WelcomeScreen();
+    return const HomeScreen();
   }
 }

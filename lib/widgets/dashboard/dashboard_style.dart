@@ -16,7 +16,7 @@ const dashboardPalette = [
 Color dashboardColor(int index) => dashboardPalette[index % dashboardPalette.length];
 
 const howOftenBorder = Color(0xFF5B5BD6);
-const priceOnBuyBorder = Color(0xFF1A73E8);
+const priceOnBuyBorder = Color(0xFF0E948C);
 const pricePathBorder = Color(0xFF0F9D8A);
 const againstAverageBorder = Color(0xFFE4537C);
 
@@ -38,8 +38,8 @@ Color lossColor(Brightness brightness) {
 
 Color histogramColor(Brightness brightness) {
   return brightness == Brightness.dark
-      ? const Color(0xFF8AB4F8)
-      : const Color(0xFF1A73E8);
+      ? const Color(0xFF7EE0D6)
+      : const Color(0xFF0E948C);
 }
 
 class DashboardCard extends StatelessWidget {

@@ -226,8 +226,14 @@ class _CalendarScreenState extends State<CalendarScreen>
 
     return Scaffold(
       appBar: AppBar(
+        leading: const DrawerButton(),
         title: Text(calendar.title),
         actions: [
+          IconButton(
+            tooltip: 'Home',
+            onPressed: () => Navigator.of(context).maybePop(),
+            icon: const Icon(Icons.home_outlined),
+          ),
           IconButton(
             tooltip: 'Previous',
             onPressed: () => calendar.shift(-1),

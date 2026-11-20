@@ -26,26 +26,26 @@ class CalendarColors extends ThemeExtension<CalendarColors> {
 
   static const light = CalendarColors(
     weekend: Color(0xFFD93025),
-    today: Color(0xFF1A73E8),
+    today: Color(0xFF0E948C),
     onToday: Colors.white,
-    chipBackground: Color(0xFFE8F0FE),
-    chipForeground: Color(0xFF174EA6),
+    chipBackground: Color(0xFFE3F5F3),
+    chipForeground: Color(0xFF0B5C57),
     gridLine: Color(0xFFE8EAED),
     outside: Color(0xFF70757A),
     closed: Color(0xFFF8F9FA),
-    selected: Color(0xFF1A73E8),
+    selected: Color(0xFF0E948C),
   );
 
   static const dark = CalendarColors(
     weekend: Color(0xFFF28B82),
-    today: Color(0xFF8AB4F8),
-    onToday: Color(0xFF202124),
-    chipBackground: Color(0xFF3C4043),
-    chipForeground: Color(0xFFE8F0FE),
+    today: Color(0xFF7EE0D6),
+    onToday: Color(0xFF10211F),
+    chipBackground: Color(0xFF1C3331),
+    chipForeground: Color(0xFFD8F7F4),
     gridLine: Color(0xFF3C4043),
     outside: Color(0xFF9AA0A6),
     closed: Color(0xFF292A2D),
-    selected: Color(0xFF8AB4F8),
+    selected: Color(0xFF7EE0D6),
   );
 
   @override
@@ -99,7 +99,7 @@ ThemeData buildLightTheme() {
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF1A73E8),
+      seedColor: const Color(0xFF0E948C),
       brightness: Brightness.light,
     ),
     scaffoldBackgroundColor: Colors.white,
@@ -113,7 +113,7 @@ ThemeData buildLightTheme() {
       centerTitle: false,
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: Color(0xFF1A73E8),
+      backgroundColor: Color(0xFF0E948C),
       foregroundColor: Colors.white,
     ),
     drawerTheme: const DrawerThemeData(backgroundColor: Colors.white),
@@ -127,7 +127,7 @@ ThemeData buildDarkTheme() {
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFF8AB4F8),
+      seedColor: const Color(0xFF7EE0D6),
       brightness: Brightness.dark,
       surface: background,
     ),
@@ -142,8 +142,8 @@ ThemeData buildDarkTheme() {
       centerTitle: false,
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: Color(0xFF8AB4F8),
-      foregroundColor: Color(0xFF202124),
+      backgroundColor: Color(0xFF7EE0D6),
+      foregroundColor: Color(0xFF10211F),
     ),
     drawerTheme: const DrawerThemeData(backgroundColor: Color(0xFF2D2E30)),
     extensions: const [CalendarColors.dark],

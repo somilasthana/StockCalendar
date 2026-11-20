@@ -32,6 +32,18 @@ class SideMenu extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(vertical: 8),
           children: [
+            ListTile(
+              leading: const Icon(Icons.home_outlined),
+              title: const Text('Home'),
+              onTap: () {
+                final navigator = Navigator.of(context);
+                navigator.pop();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (navigator.canPop()) navigator.pop();
+                });
+              },
+            ),
+            const Divider(),
             SwitchListTile(
               secondary: Icon(
                 theme.mode == ThemeMode.dark
@@ -158,7 +170,7 @@ class SideMenu extends StatelessWidget {
                 foregroundColor: scheme.onPrimary,
                 child: Text(email.isEmpty ? '?' : email[0].toUpperCase()),
               ),
-              title: const Text('StockCalendar Lite'),
+              title: const Text('Stock Calendar AI'),
               subtitle: Text(email.isEmpty ? 'Not signed in' : email),
               onTap: () {
                 Navigator.pop(context);
