@@ -21,6 +21,7 @@ class CalendarController extends ChangeNotifier {
 
   SeriesRepository? _repo;
   StreamSubscription<List<BuySeries>>? _sub;
+  bool _isolated = false;
 
   CalendarView view = CalendarView.month;
   DateTime selected = dateOnly(DateTime.now());
@@ -113,7 +114,38 @@ class CalendarController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Keeps this calendar off the signed-in buy list and off device alerts.
+  Future<void> bindIsolated(SeriesRepository repo) async {
+    await _sub?.cancel();
+    _isolated = true;
+    _repo = repo;
+    loading = false;
+    error = null;
+    series = [];
+    notifyListeners();
+    _sub = repo.watch().listen(
+      (items) {
+        series = items;
+        loading = false;
+        error = null;
+        notifyListeners();
+      },
+      onError: (Object _) {
+        loading = false;
+        error = 'Could not load buys.';
+        notifyListeners();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
   Future<void> refreshAlerts() async {
+    if (_isolated) return;
     alertMessage = await _notifications.reschedule(series);
     notifyListeners();
   }
@@ -174,7 +206,7 @@ class CalendarController extends ChangeNotifier {
     if (repo == null) return 'Could not reset the calendar.';
     try {
       await repo.clearAll();
-      await _notifications.cancelAll();
+      if (!_isolated) await _notifications.cancelAll();
     } catch (_) {
       return 'Could not reset the calendar.';
     }

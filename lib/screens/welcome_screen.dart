@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../expertpick/expert_calendar_scope.dart';
 import '../state/auth_controller.dart';
 import '../theme/calendar_theme.dart';
 import 'calendar_screen.dart';
@@ -24,9 +25,7 @@ class WelcomeScreen extends StatefulWidget {
 class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
-    return const _MintScaffold(
-      child: _IntroPage(),
-    );
+    return const _MintScaffold(child: _IntroPage());
   }
 }
 
@@ -42,6 +41,14 @@ class HomeScreen extends StatelessWidget {
             MaterialPageRoute<void>(
               settings: const RouteSettings(name: '/calendar'),
               builder: (_) => const CalendarScreen(),
+            ),
+          );
+        },
+        onOpenExpert: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(name: '/expert-calendar'),
+              builder: (_) => const ExpertCalendarScope(),
             ),
           );
         },
@@ -69,7 +76,9 @@ class _MintScaffold extends StatelessWidget {
           backgroundColor: _mint,
           body: Stack(
             children: [
-              const Positioned.fill(child: CustomPaint(painter: _MintPatternPainter())),
+              const Positioned.fill(
+                child: CustomPaint(painter: _MintPatternPainter()),
+              ),
               SafeArea(child: child),
             ],
           ),
@@ -95,7 +104,9 @@ class _IntroPage extends StatelessWidget {
               children: [
                 const _BrandMark(),
                 const SizedBox(height: 32),
-                const Center(child: _Badge(label: 'Smarter investor, less work')),
+                const Center(
+                  child: _Badge(label: 'Smarter investor, less work'),
+                ),
                 const SizedBox(height: 28),
                 const Text(
                   'Automate every\ninvestment journey,',
@@ -127,7 +138,8 @@ class _IntroPage extends StatelessWidget {
                 _PillButton(
                   label: "Let's Get Started",
                   filled: true,
-                  onPressed: () => context.read<AuthController>().completeIntro(),
+                  onPressed: () =>
+                      context.read<AuthController>().completeIntro(),
                 ),
                 const SizedBox(height: 12),
                 const _PillButton(
@@ -147,9 +159,10 @@ class _IntroPage extends StatelessWidget {
 void _noop() {}
 
 class _ToolsPage extends StatelessWidget {
-  const _ToolsPage({required this.onOpenCalendar});
+  const _ToolsPage({required this.onOpenCalendar, required this.onOpenExpert});
 
   final VoidCallback onOpenCalendar;
+  final VoidCallback onOpenExpert;
 
   @override
   Widget build(BuildContext context) {
@@ -190,15 +203,15 @@ class _ToolsPage extends StatelessWidget {
           _ToolCard(
             icon: Icons.calendar_month,
             title: 'Personal Stock Calendar',
-            detail: 'Plan buys on market days, track them, and open your calendar.',
+            detail:
+                'Plan buys on market days, track them, and open your calendar.',
             onTap: onOpenCalendar,
           ),
           _ToolCard(
-            icon: Icons.hourglass_empty,
-            title: 'Coming Soon',
-            detail: 'Another tool is on the way.',
-            muted: true,
-            onTap: () => _onTheWay(context),
+            icon: Icons.workspace_premium_outlined,
+            title: 'Expert Pick Calendar',
+            detail: 'Analyze expert scrip portfolio and gain experience',
+            onTap: onOpenExpert,
           ),
           _ToolCard(
             icon: Icons.widgets_outlined,
@@ -231,7 +244,11 @@ class _BrandMark extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [
-            BoxShadow(color: Color(0x140F1C28), blurRadius: 16, offset: Offset(0, 6)),
+            BoxShadow(
+              color: Color(0x140F1C28),
+              blurRadius: 16,
+              offset: Offset(0, 6),
+            ),
           ],
         ),
         child: const Row(
@@ -241,7 +258,11 @@ class _BrandMark extends StatelessWidget {
             SizedBox(width: 8),
             Text(
               'Stock Calendar AI',
-              style: TextStyle(color: _ink, fontSize: 15, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: _ink,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
@@ -271,7 +292,11 @@ class _Badge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(color: _ink, fontSize: 13, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: _ink,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -301,7 +326,10 @@ class _PillButton extends StatelessWidget {
                 backgroundColor: _navy,
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               onPressed: onPressed,
               child: Text(label),
@@ -312,7 +340,10 @@ class _PillButton extends StatelessWidget {
                 foregroundColor: _ink,
                 side: const BorderSide(color: Color(0xFFE4E7EB)),
                 shape: const StadiumBorder(),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               onPressed: onPressed,
               child: Text(label),
@@ -345,7 +376,11 @@ class _ToolCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(28),
           boxShadow: const [
-            BoxShadow(color: Color(0x24101C28), blurRadius: 28, offset: Offset(0, 14)),
+            BoxShadow(
+              color: Color(0x24101C28),
+              blurRadius: 28,
+              offset: Offset(0, 14),
+            ),
           ],
         ),
         child: Material(
@@ -389,7 +424,11 @@ class _ToolCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     detail,
-                    style: const TextStyle(color: _muted, fontSize: 15, height: 1.4),
+                    style: const TextStyle(
+                      color: _muted,
+                      fontSize: 15,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
