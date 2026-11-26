@@ -74,6 +74,23 @@ void main() {
     expect(repeat['type'], "Don't repeat");
   });
 
+  test('only the expert export writes number_of_shares', () {
+    final buy = _buy().copyWith(numberOfShares: 20);
+    expect(_rows([buy]).single.containsKey('number_of_shares'), isFalse);
+
+    final decoded = jsonDecode(exportBuys([buy], includeShares: true)!.json);
+    final row = Map<String, dynamic>.from((decoded as List).single as Map);
+    expect(row['number_of_shares'], 20);
+    expect(row.keys, [
+      'stock_name',
+      'stock_code',
+      'buy_date',
+      'notes',
+      'number_of_shares',
+      'Repeat',
+    ]);
+  });
+
   test('week, day, count, and until keep the input.json fields', () {
     final rows = _rows([
       _buy(

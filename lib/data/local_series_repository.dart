@@ -56,6 +56,9 @@ class LocalSeriesRepository implements SeriesRepository {
   }
 
   @override
+  Future<void> replaceAll(List<BuySeries> series) => _write(series);
+
+  @override
   Future<void> clearAll() => _write([]);
 
   @override

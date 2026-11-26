@@ -19,6 +19,7 @@ const howOftenBorder = Color(0xFF5B5BD6);
 const priceOnBuyBorder = Color(0xFF0E948C);
 const pricePathBorder = Color(0xFF0F9D8A);
 const againstAverageBorder = Color(0xFFE4537C);
+const portfolioWorthBorder = Color(0xFF3D7DFF);
 
 Color chartSurface(Brightness brightness, ColorScheme scheme) {
   return brightness == Brightness.light ? Colors.white : scheme.surface;

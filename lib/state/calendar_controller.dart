@@ -9,6 +9,7 @@ import '../data/series_repository.dart';
 import '../logic/dates.dart';
 import '../logic/series_edit.dart';
 import '../models/buy_series.dart';
+import '../models/expert_run.dart';
 import '../services/notification_service.dart';
 
 enum CalendarView { year, month, week, day }
@@ -23,9 +24,15 @@ class CalendarController extends ChangeNotifier {
   StreamSubscription<List<BuySeries>>? _sub;
   bool _isolated = false;
 
+  /// Expert calendar buys come from a scrip. They are not typed in by hand.
+  bool get manualBuysLocked => _isolated;
+
   CalendarView view = CalendarView.month;
   DateTime selected = dateOnly(DateTime.now());
   List<BuySeries> series = [];
+
+  /// Scrip name, strategy, and amount last applied on the expert calendar.
+  ExpertRun? expertRun;
   bool loading = false;
   String? error;
   String? alertMessage;
@@ -200,15 +207,33 @@ class CalendarController extends ChangeNotifier {
     return null;
   }
 
+  void setExpertRun(ExpertRun value) {
+    expertRun = value;
+    notifyListeners();
+  }
+
   /// Removes every buy, including repeats, and clears scheduled alerts.
   Future<String?> resetCalendar() async {
     final repo = _repo;
     if (repo == null) return 'Could not reset the calendar.';
     try {
+      expertRun = null;
       await repo.clearAll();
       if (!_isolated) await _notifications.cancelAll();
     } catch (_) {
       return 'Could not reset the calendar.';
+    }
+    return null;
+  }
+
+  /// Replaces every buy. Used by the expert simulation, which owns the calendar.
+  Future<String?> replaceBuys(List<BuySeries> items) async {
+    final repo = _repo;
+    if (repo == null) return 'Could not save these buys.';
+    try {
+      await repo.replaceAll(items);
+    } catch (_) {
+      return 'Could not save these buys.';
     }
     return null;
   }

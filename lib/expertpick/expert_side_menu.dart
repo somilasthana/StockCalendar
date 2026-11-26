@@ -13,13 +13,23 @@ class ExpertSideMenu extends StatelessWidget {
     required this.email,
     required this.onImport,
     required this.onExpertPick,
+    required this.onShowCalendar,
+    required this.onPersonal,
     required this.onReset,
+    this.calendarViews = false,
+    this.showReset = false,
   });
 
   final String email;
   final VoidCallback onImport;
   final VoidCallback onExpertPick;
+  final VoidCallback onShowCalendar;
+  final VoidCallback onPersonal;
   final VoidCallback onReset;
+  final bool calendarViews;
+
+  /// Reset stays implemented and out of the menu until a later phase.
+  final bool showReset;
 
   @override
   Widget build(BuildContext context) {
@@ -55,39 +65,41 @@ class ExpertSideMenu extends StatelessWidget {
               onChanged: theme.setDark,
             ),
             const Divider(),
-            _item(
-              context,
-              calendar,
-              CalendarView.year,
-              Icons.calendar_view_month,
-              'Year',
-              scheme,
-            ),
-            _item(
-              context,
-              calendar,
-              CalendarView.month,
-              Icons.calendar_month,
-              'Month',
-              scheme,
-            ),
-            _item(
-              context,
-              calendar,
-              CalendarView.week,
-              Icons.view_week,
-              'Week',
-              scheme,
-            ),
-            _item(
-              context,
-              calendar,
-              CalendarView.day,
-              Icons.view_day,
-              'Day',
-              scheme,
-            ),
-            _action(context, Icons.upload_file, 'Import', onImport),
+            if (calendarViews) ...[
+              _item(
+                context,
+                calendar,
+                CalendarView.year,
+                Icons.calendar_view_month,
+                'Year',
+                scheme,
+              ),
+              _item(
+                context,
+                calendar,
+                CalendarView.month,
+                Icons.calendar_month,
+                'Month',
+                scheme,
+              ),
+              _item(
+                context,
+                calendar,
+                CalendarView.week,
+                Icons.view_week,
+                'Week',
+                scheme,
+              ),
+              _item(
+                context,
+                calendar,
+                CalendarView.day,
+                Icons.view_day,
+                'Day',
+                scheme,
+              ),
+            ],
+            _action(context, Icons.refresh, 'Refresh Scrip', onImport),
             _action(
               context,
               Icons.workspace_premium_outlined,
@@ -95,12 +107,25 @@ class ExpertSideMenu extends StatelessWidget {
               onExpertPick,
             ),
             _action(context, Icons.insights_outlined, 'Dashboard', () {
-              _open(context, const DashboardScreen());
+              _open(context, const DashboardScreen(expert: true));
             }),
             _action(context, Icons.history, 'Retro', () {
               _open(context, const LedgerScreen());
             }),
-            _action(context, Icons.restart_alt, 'Reset Calendar', onReset),
+            _action(
+              context,
+              Icons.calendar_month_outlined,
+              'Show Calendar',
+              onShowCalendar,
+            ),
+            _action(
+              context,
+              Icons.event_available_outlined,
+              'Add to Personal Calendar',
+              onPersonal,
+            ),
+            if (showReset)
+              _action(context, Icons.restart_alt, 'Reset Calendar', onReset),
             const Divider(),
             ListTile(
               leading: CircleAvatar(

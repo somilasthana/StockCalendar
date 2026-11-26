@@ -18,12 +18,14 @@ class BuySeries {
     required this.endType,
     required DateTime createdAt,
     this.count,
+    int numberOfShares = 1,
     DateTime? untilDate,
     DateTime? cutBefore,
   }) : anchorDate = dateOnly(anchorDate),
        untilDate = untilDate == null ? null : dateOnly(untilDate),
        cutBefore = cutBefore == null ? null : dateOnly(cutBefore),
-       createdAt = createdAt.toUtc();
+       createdAt = createdAt.toUtc(),
+       numberOfShares = numberOfShares < 1 ? 1 : numberOfShares;
 
   final String id;
   final String stockName;
@@ -34,6 +36,10 @@ class BuySeries {
   final int interval;
   final RepeatEnd endType;
   final int? count;
+
+  /// Shares bought on each day of this rule. The calendar dialog does not
+  /// show it. Expert Scrip dashboard totals use it. Personal buys stay at 1.
+  final int numberOfShares;
   final DateTime? untilDate;
 
   /// Occurrences on or after this date are removed. Used when a later day
@@ -53,6 +59,7 @@ class BuySeries {
     int? interval,
     RepeatEnd? endType,
     Object? count = _unset,
+    int? numberOfShares,
     Object? untilDate = _unset,
     Object? cutBefore = _unset,
     DateTime? createdAt,
@@ -67,6 +74,7 @@ class BuySeries {
       interval: interval ?? this.interval,
       endType: endType ?? this.endType,
       count: identical(count, _unset) ? this.count : count as int?,
+      numberOfShares: numberOfShares ?? this.numberOfShares,
       untilDate: identical(untilDate, _unset) ? this.untilDate : untilDate as DateTime?,
       cutBefore: identical(cutBefore, _unset) ? this.cutBefore : cutBefore as DateTime?,
       createdAt: createdAt ?? this.createdAt,
@@ -84,6 +92,7 @@ class BuySeries {
       'endType': endType.name,
       'createdAt': createdAt.toUtc().toIso8601String(),
       if (count != null) 'count': count,
+      if (numberOfShares != 1) 'numberOfShares': numberOfShares,
       if (untilDate != null) 'untilDate': formatIsoDate(untilDate!),
       if (cutBefore != null) 'cutBefore': formatIsoDate(cutBefore!),
     };
@@ -100,6 +109,7 @@ class BuySeries {
       interval: json['interval'] as int? ?? 1,
       endType: RepeatEnd.values.byName(json['endType'] as String? ?? 'forever'),
       count: json['count'] as int?,
+      numberOfShares: shareCountOf(json['numberOfShares']),
       untilDate: json['untilDate'] == null ? null : parseIsoDate(json['untilDate'] as String),
       cutBefore: json['cutBefore'] == null ? null : parseIsoDate(json['cutBefore'] as String),
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -108,6 +118,15 @@ class BuySeries {
 }
 
 String normalizeSymbol(String value) => value.trim().toUpperCase();
+
+/// A positive whole share count. Anything else is one share.
+int shareCountOf(Object? value) {
+  if (value is int) return value >= 1 ? value : 1;
+  if (value is double && value >= 1 && value == value.roundToDouble()) {
+    return value.toInt();
+  }
+  return 1;
+}
 
 String repeatLabel(BuySeries series) {
   if (series.frequency == RepeatFrequency.none) return "Doesn't repeat";

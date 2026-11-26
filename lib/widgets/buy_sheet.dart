@@ -6,24 +6,54 @@ import '../models/buy_series.dart';
 import '../state/calendar_controller.dart';
 import 'repeat_sheet.dart';
 
+const manualBuyDisabled = 'Add or Edit of Buy Event is disabled';
+
 Future<void> showBuySheet(
   BuildContext context, {
   required DateTime day,
   BuySeries? existing,
 }) {
+  final calendar = context.read<CalendarController>();
+  if (calendar.manualBuysLocked && existing == null) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: const Text(manualBuyDisabled),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) => BuySheet(day: dateOnly(day), existing: existing),
+    builder: (context) => ChangeNotifierProvider<CalendarController>.value(
+      value: calendar,
+      child: BuySheet(
+        day: dateOnly(day),
+        existing: existing,
+        readOnly: calendar.manualBuysLocked,
+      ),
+    ),
   );
 }
 
 class BuySheet extends StatefulWidget {
-  const BuySheet({super.key, required this.day, this.existing});
+  const BuySheet({
+    super.key,
+    required this.day,
+    this.existing,
+    this.readOnly = false,
+  });
 
   final DateTime day;
   final BuySeries? existing;
+  final bool readOnly;
 
   @override
   State<BuySheet> createState() => _BuySheetState();
@@ -117,8 +147,14 @@ class _BuySheetState extends State<BuySheet> {
           'This day and every later day in the series will be removed. Earlier days stay.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Remove')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove'),
+          ),
         ],
       ),
     );
@@ -130,6 +166,7 @@ class _BuySheetState extends State<BuySheet> {
   @override
   Widget build(BuildContext context) {
     final editing = widget.existing != null;
+    final locked = widget.readOnly;
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
     final sheetHeight = (MediaQuery.sizeOf(context).height - bottom) * 0.72;
     return Padding(
@@ -139,95 +176,115 @@ class _BuySheetState extends State<BuySheet> {
         child: SizedBox(
           height: sheetHeight,
           child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      editing ? 'Edit buy' : 'Stock to buy',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _name,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        labelText: 'Stock to buy',
-                        prefixIcon: Icon(Icons.show_chart),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _symbol,
-                      textCapitalization: TextCapitalization.characters,
-                      decoration: const InputDecoration(
-                        labelText: 'Stock symbol',
-                        hintText: 'ITC',
-                        prefixIcon: Icon(Icons.tag),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.event),
-                      title: Text(prettyDate(widget.day)),
-                    ),
-                    TextField(
-                      controller: _notes,
-                      minLines: 1,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Notes',
-                        prefixIcon: Icon(Icons.notes),
-                      ),
-                    ),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.repeat),
-                      title: Text(editing ? repeatLabel(widget.existing!) : _repeat.label),
-                      subtitle: editing ? const Text('Repeat stays as it was saved') : null,
-                      trailing: editing ? null : const Icon(Icons.chevron_right),
-                      onTap: editing ? null : _editRepeat,
-                    ),
-                    if (_error != null)
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                       Text(
-                        _error!,
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                        locked
+                            ? 'Buy'
+                            : editing
+                            ? 'Edit buy'
+                            : 'Stock to buy',
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _name,
+                        readOnly: locked,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: const InputDecoration(
+                          labelText: 'Stock to buy',
+                          prefixIcon: Icon(Icons.show_chart),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _symbol,
+                        readOnly: locked,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: const InputDecoration(
+                          labelText: 'Stock symbol',
+                          hintText: 'ITC',
+                          prefixIcon: Icon(Icons.tag),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.event),
+                        title: Text(prettyDate(widget.day)),
+                      ),
+                      TextField(
+                        controller: _notes,
+                        readOnly: locked,
+                        minLines: 1,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Notes',
+                          prefixIcon: Icon(Icons.notes),
+                        ),
+                      ),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.repeat),
+                        title: Text(
+                          editing
+                              ? repeatLabel(widget.existing!)
+                              : _repeat.label,
+                        ),
+                        subtitle: editing
+                            ? const Text('Repeat stays as it was saved')
+                            : null,
+                        trailing: editing || locked
+                            ? null
+                            : const Icon(Icons.chevron_right),
+                        onTap: editing || locked ? null : _editRepeat,
+                      ),
+                      if (_error != null)
+                        Text(
+                          _error!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                child: Row(
+                  children: [
+                    if (editing && !locked)
+                      TextButton(
+                        onPressed: _saving ? null : _delete,
+                        child: const Text('Remove'),
+                      ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: _saving ? null : () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: _saving || locked ? null : _save,
+                      child: _saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Save'),
+                    ),
                   ],
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: Row(
-                children: [
-                  if (editing)
-                    TextButton(onPressed: _saving ? null : _delete, child: const Text('Remove')),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: _saving ? null : () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: _saving ? null : _save,
-                    child: _saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Save'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );

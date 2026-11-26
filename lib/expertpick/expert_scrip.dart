@@ -11,6 +11,7 @@ class ExpertStock {
 
 class ExpertScrip {
   const ExpertScrip({
+    required this.title,
     required this.authorName,
     required this.investmentFirm,
     required this.description,
@@ -19,6 +20,7 @@ class ExpertScrip {
     required this.stocks,
   });
 
+  final String title;
   final String authorName;
   final String investmentFirm;
   final String description;
@@ -49,12 +51,46 @@ Future<ExpertScrip> loadSampleScrip() async {
 }
 
 ExpertScrip parseExpertScrip(String raw) {
-  final decoded = jsonDecode(raw);
+  final decoded = jsonDecode(_stripBom(raw));
   if (decoded is! Map) {
     throw const FormatException('The sample could not be read.');
   }
-  final map = Map<String, dynamic>.from(decoded);
+  return _scripFrom(Map<String, dynamic>.from(decoded));
+}
+
+/// One dropdown entry per titled item. A single scrip object is a list of one.
+List<ExpertScrip> parseExpertList(String raw) {
+  final decoded = jsonDecode(_stripBom(raw));
+  final List<dynamic> items;
+  if (decoded is List) {
+    items = decoded;
+  } else if (decoded is Map) {
+    items = [decoded];
+  } else {
+    throw const FormatException('The file could not be read.');
+  }
+  final scrips = <ExpertScrip>[];
+  for (final item in items) {
+    if (item is! Map) continue;
+    final scrip = _scripFrom(Map<String, dynamic>.from(item));
+    if (scrip.title.isEmpty) continue;
+    scrips.add(scrip);
+  }
+  if (scrips.isEmpty) {
+    throw const FormatException('The file could not be read.');
+  }
+  return scrips;
+}
+
+/// Dropdown labels. A repeated title gets a count so each row stays distinct.
+List<String> expertScripLabels(List<ExpertScrip> scrips) {
+  final used = <String>{};
+  return [for (final scrip in scrips) _uniqueLabel(scrip.title, used)];
+}
+
+ExpertScrip _scripFrom(Map<String, dynamic> map) {
   return ExpertScrip(
+    title: _text(map['Title']),
     authorName: _text(map['author_name']),
     investmentFirm: _text(map['investment_firm']),
     description: _text(map['description']),
@@ -62,6 +98,22 @@ ExpertScrip parseExpertScrip(String raw) {
     youtubeUrl: _text(map['youtube_url']),
     stocks: _stocks(map['stocks']),
   );
+}
+
+String _uniqueLabel(String title, Set<String> used) {
+  var label = title;
+  var count = 2;
+  while (!used.add(label)) {
+    label = '$title ($count)';
+    count++;
+  }
+  return label;
+}
+
+String _stripBom(String raw) {
+  final text = raw.trim();
+  if (text.startsWith('\uFEFF')) return text.substring(1).trim();
+  return text;
 }
 
 String formatPublishedDate(String raw) {

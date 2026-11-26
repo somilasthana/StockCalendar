@@ -58,6 +58,7 @@ SeriesChange editFromDate({
     interval: series.interval,
     endType: series.endType,
     count: remaining,
+    numberOfShares: series.numberOfShares,
     untilDate: series.untilDate,
     createdAt: series.createdAt,
   );

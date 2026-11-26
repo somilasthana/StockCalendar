@@ -32,10 +32,15 @@ String describeExport(int count) {
 /// own row. A rule that no longer appears is left out.
 ///
 /// Returns null when there is nothing to export.
-ExportDocument? exportBuys(List<BuySeries> series) {
+ExportDocument? exportBuys(
+  List<BuySeries> series, {
+  bool includeShares = false,
+}) {
   final visible = series.where(_onCalendar).toList()..sort(_byDateThenName);
   if (visible.isEmpty) return null;
-  final rows = [for (final item in visible) _row(item)];
+  final rows = [
+    for (final item in visible) _row(item, includeShares: includeShares),
+  ];
   return ExportDocument(
     json: const JsonEncoder.withIndent('    ').convert(rows),
     count: rows.length,
@@ -70,12 +75,16 @@ bool _onCalendar(BuySeries series) {
   }
 }
 
-Map<String, Object?> _row(BuySeries series) {
+Map<String, Object?> _row(
+  BuySeries series, {
+  required bool includeShares,
+}) {
   return {
     'stock_name': series.stockName.trim(),
     'stock_code': normalizeSymbol(series.symbol),
     'buy_date': formatIsoDate(series.anchorDate),
     'notes': series.notes.trim(),
+    if (includeShares) 'number_of_shares': series.numberOfShares,
     'Repeat': _repeat(series),
   };
 }

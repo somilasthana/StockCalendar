@@ -1,16 +1,42 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../logic/dashboard_format.dart';
 import '../../logic/dashboard_metrics.dart';
 import 'dashboard_style.dart';
 
 class FrequencyDonut extends StatefulWidget {
-  const FrequencyDonut({super.key, required this.counts});
+  const FrequencyDonut({super.key, required this.counts, this.noun = 'buy'})
+    : amounts = null;
+
+  const FrequencyDonut.amounts({super.key, required this.amounts})
+    : counts = const [],
+      noun = 'current';
 
   final List<SymbolCount> counts;
 
+  /// When set, slice size and percent follow the current value.
+  final List<SymbolInvestment>? amounts;
+
+  /// Singular word under the center total. Count mode uses "buy".
+  final String noun;
+
   @override
   State<FrequencyDonut> createState() => _FrequencyDonutState();
+}
+
+class _DonutRow {
+  const _DonutRow({
+    required this.name,
+    required this.value,
+    required this.share,
+    required this.detail,
+  });
+
+  final String name;
+  final double value;
+  final double share;
+  final String detail;
 }
 
 class _FrequencyDonutState extends State<FrequencyDonut> {
@@ -32,14 +58,42 @@ class _FrequencyDonutState extends State<FrequencyDonut> {
     });
   }
 
+  List<_DonutRow> get _rows {
+    final amounts = widget.amounts;
+    if (amounts != null) {
+      return [
+        for (final row in amounts)
+          _DonutRow(
+            name: row.name.trim().isEmpty ? row.symbol : row.name.trim(),
+            value: row.amount,
+            share: row.share,
+            detail: 'Current: ${fullRupee(row.amount)}',
+          ),
+      ];
+    }
+    return [
+      for (final row in widget.counts)
+        _DonutRow(
+          name: row.name.trim().isEmpty ? row.symbol : row.name.trim(),
+          value: row.count.toDouble(),
+          share: row.share,
+          detail: 'Cnt: ${row.count}',
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final total = widget.counts.fold<int>(0, (sum, row) => sum + row.count);
-    final touched = _touched != null && _touched! < widget.counts.length
-        ? _touched
-        : null;
+    final rows = _rows;
+    final money = widget.amounts != null;
+    final total = rows.fold<double>(0, (sum, row) => sum + row.value);
+    final touched = _touched != null && _touched! < rows.length ? _touched : null;
     final popupAt = touched == null ? null : _popupAt;
+    final center = money ? fullRupee(total) : total.round().toString();
+    final caption = money
+        ? 'current'
+        : (total == 1 ? widget.noun : '${widget.noun}s');
     return TapRegion(
       onTapOutside: (_) => _clear(),
       child: MouseRegion(
@@ -75,9 +129,9 @@ class _FrequencyDonutState extends State<FrequencyDonut> {
                         },
                       ),
                       sections: [
-                        for (var i = 0; i < widget.counts.length; i++)
+                        for (var i = 0; i < rows.length; i++)
                           PieChartSectionData(
-                            value: widget.counts[i].count.toDouble(),
+                            value: rows[i].value,
                             color: dashboardColor(i),
                             radius: touched == i ? 58 : 48,
                             showTitle: false,
@@ -89,12 +143,18 @@ class _FrequencyDonutState extends State<FrequencyDonut> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          '$total',
-                          style: Theme.of(context).textTheme.headlineSmall,
+                        SizedBox(
+                          width: 110,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              center,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                          ),
                         ),
                         Text(
-                          total == 1 ? 'buy' : 'buys',
+                          caption,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
@@ -107,7 +167,7 @@ class _FrequencyDonutState extends State<FrequencyDonut> {
                       bounds: constraints.biggest,
                       anchor: popupAt,
                       color: dashboardColor(touched),
-                      row: widget.counts[touched],
+                      row: rows[touched],
                     ),
                 ],
               );
@@ -130,19 +190,18 @@ class _SlicePopup extends StatelessWidget {
   final Size bounds;
   final Offset anchor;
   final Color color;
-  final SymbolCount row;
+  final _DonutRow row;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final brightness = Theme.of(context).brightness;
-    const width = 188.0;
+    const width = 220.0;
     final maxLeft = bounds.width - width;
     final left = maxLeft <= 0
         ? 0.0
         : (anchor.dx - width / 2).clamp(0.0, maxLeft);
     final top = (anchor.dy - 78).clamp(0.0, bounds.height - 8);
-    final name = row.name.trim().isEmpty ? row.symbol : row.name.trim();
     final style = TextStyle(
       fontSize: 12,
       height: 1.35,
@@ -172,8 +231,8 @@ class _SlicePopup extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Stock Name: $name', style: style),
-                Text('Cnt: ${row.count}', style: style),
+                Text('Stock Name: ${row.name}', style: style),
+                Text(row.detail, style: style),
                 Text('Percent (%): ${_percent(row.share)}', style: style),
               ],
             ),

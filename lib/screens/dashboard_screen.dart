@@ -12,9 +12,14 @@ import '../widgets/dashboard/frequency_donut.dart';
 import '../widgets/dashboard/price_histogram.dart';
 import '../widgets/dashboard/price_line_chart.dart';
 import '../widgets/dashboard/range_column_chart.dart';
+import '../widgets/dashboard/worth_line_chart.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, this.expert = false});
+
+  /// Expert Scrip uses the stored share count. Personal Stock Calendar counts
+  /// one share per buy. Both price every chart from the closing price.
+  final bool expert;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -29,8 +34,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _prices = YahooPriceService();
-    _dashboard = DashboardController(priceService: _prices)
-      ..addListener(_rebuild);
+    _dashboard = DashboardController(
+      priceService: _prices,
+      expert: widget.expert,
+    )..addListener(_rebuild);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _calendar = context.read<CalendarController>()..addListener(_onCalendar);
@@ -45,7 +52,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _onCalendar() {
     final calendar = _calendar;
     if (calendar == null) return;
-    _dashboard.sync(calendar.series);
+    _dashboard.sync(calendar.series, run: calendar.expertRun);
   }
 
   @override
@@ -60,13 +67,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Stock Calendar Insights')),
+      appBar: AppBar(
+        toolbarHeight: widget.expert ? 72 : null,
+        title: widget.expert
+            ? _ExpertTitle(name: _dashboard.scripName)
+            : const Text('Stock Calendar Insights'),
+      ),
       body: !_dashboard.started
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: () => _dashboard.sync(
                 _calendar?.series ?? const <BuySeries>[],
                 refresh: true,
+                run: _calendar?.expertRun,
               ),
               child: _dashboard.buys.isEmpty
                   ? ListView(
@@ -80,30 +93,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                       children: [
-                        if (_dashboard.loading) _Progress(dashboard: _dashboard),
-                        _PortfolioCount(count: _dashboard.buys.length),
+                        if (_dashboard.loading)
+                          _Progress(dashboard: _dashboard),
+                        _PortfolioCount(count: _dashboard.portfolioCount),
+                        if (_dashboard.gain != null)
+                          _GainSummary(gain: _dashboard.gain!),
                         for (final line in _notices(_dashboard))
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
                               line,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: scheme.onSurfaceVariant,
-                                height: 1.35,
-                              ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: scheme.onSurfaceVariant,
+                                    height: 1.35,
+                                  ),
                             ),
                           ),
                         DashboardCard(
                           title: 'Your Buying Pattern',
-                          caption:
-                              'Each slice is a symbol. Tap a slice for the stock, count, and share.',
+                          caption: 'Each slice is a symbol. Tap a slice for the stock, its current value, and its share of the portfolio.',
                           borderColor: howOftenBorder,
-                          child: FrequencyDonut(counts: _dashboard.counts),
+                          child: _holdingDonut(_dashboard),
                         ),
                         DashboardCard(
                           title: 'Amount Invested Distribution',
-                          caption:
-                              'Each bar adds the daily price of every symbol you bought, once per symbol per day.',
+                          caption: widget.expert
+                              ? 'Each bar adds the closing price times the shares bought, once per symbol per day.'
+                              : 'Each bar adds the closing price of every symbol you bought, once per symbol per day.',
                           borderColor: priceOnBuyBorder,
                           child: _pricedChild(
                             _dashboard,
@@ -116,8 +133,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         DashboardCard(
                           title: 'Price Movement',
-                          caption:
-                              'Daily price from the first buy through the latest trading day, including days with no buy.',
+                          caption: 'Closing price from the first buy through the latest trading day, including days with no buy.',
                           borderColor: pricePathBorder,
                           child: _pricedChild(
                             _dashboard,
@@ -126,25 +142,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               selected: _dashboard.selectedSymbol,
                               symbolName: _dashboard.selectedSymbol == null
                                   ? ''
-                                  : _dashboard.nameOf(_dashboard.selectedSymbol!),
-                              points: _dashboard.lineFor(_dashboard.selectedSymbol),
+                                  : _dashboard.nameOf(
+                                      _dashboard.selectedSymbol!,
+                                    ),
+                              points: _dashboard.lineFor(
+                                _dashboard.selectedSymbol,
+                              ),
                               onSelected: _dashboard.selectSymbol,
                             ),
                           ),
                         ),
                         DashboardCard(
                           title: 'Your Portfolio Gains/Losses',
-                          caption:
-                              'Comparing average bought price with current stock price',
+                          caption: widget.expert
+                              ? 'Each bar runs from the average price paid to the latest close. The average is the total spent divided by the shares bought.'
+                              : 'Each bar runs from the average closing price paid to the latest close. Each buy counts as one share.',
                           borderColor: againstAverageBorder,
                           child: _pricedChild(
                             _dashboard,
                             RangeColumnChart(points: _dashboard.ranges.points),
                           ),
                         ),
+                        if (_dashboard.showsWorth)
+                          DashboardCard(
+                            title: 'Your Portfolio Worth',
+                            caption: widget.expert
+                                ? 'Compare cumulative increase or decrease in portfolio worth'
+                                : 'Invested adds the closing price of each buy and stays flat on other days. Worth is the shares held times that day\'s close.',
+                            borderColor: portfolioWorthBorder,
+                            child: _worthBody(_dashboard),
+                          ),
                       ],
                     ),
             ),
+    );
+  }
+}
+
+class _ExpertTitle extends StatelessWidget {
+  const _ExpertTitle({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Expert Scrip Portfolio Insight',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleMedium,
+        ),
+        Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium,
+        ),
+      ],
     );
   }
 }
@@ -186,8 +245,7 @@ class _PortfolioCount extends StatelessWidget {
   }
 }
 
-// Kept for a later gain/loss total. Not shown on the screen.
-// ignore: unused_element
+// Gain or loss on the last plotted day of Your Portfolio Worth.
 class _GainSummary extends StatelessWidget {
   const _GainSummary({required this.gain});
 
@@ -259,8 +317,44 @@ class _Progress extends StatelessWidget {
   }
 }
 
+Widget _worthBody(DashboardController dashboard) {
+  if (dashboard.expert && dashboard.investedAmount == null) {
+    if (dashboard.loading) return const ChartWaiting();
+    return const SizedBox(
+      height: 88,
+      child: Center(
+        child: Text(
+          'Add this scrip to the calendar again so the invested amount can be plotted.',
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+  if (dashboard.loading && dashboard.worth.isEmpty) return const ChartWaiting();
+  if (dashboard.worth.isEmpty) {
+    return const SizedBox(
+      height: 120,
+      child: Center(child: Text('No market days to plot.')),
+    );
+  }
+  return WorthLineChart(points: dashboard.worth);
+}
+
+Widget _holdingDonut(DashboardController dashboard) {
+  final rows = dashboard.holdings;
+  if (rows.isEmpty) {
+    if (dashboard.loading) return const ChartWaiting();
+    return const SizedBox(
+      height: 120,
+      child: Center(child: Text('No current price for these stocks.')),
+    );
+  }
+  return FrequencyDonut.amounts(amounts: rows);
+}
+
 Widget _pricedChild(DashboardController dashboard, Widget child) {
-  final waiting = dashboard.loading &&
+  final waiting =
+      dashboard.loading &&
       dashboard.prices.values.every((bars) => bars.isEmpty);
   if (waiting) return const ChartWaiting();
   return child;
@@ -269,22 +363,29 @@ Widget _pricedChild(DashboardController dashboard, Widget child) {
 List<String> _notices(DashboardController dashboard) {
   final lines = <String>[];
   final priced = dashboard.prices.values.any((bars) => bars.isNotEmpty);
-  if (dashboard.started && !dashboard.loading && !priced && dashboard.loadError != null) {
+  if (dashboard.started &&
+      !dashboard.loading &&
+      !priced &&
+      dashboard.loadError != null) {
     lines.add(dashboard.loadError!);
   }
   final missing = dashboard.ranges.unpricedSymbols;
   if (missing.isNotEmpty && priced) {
     lines.add('No price for ${missing.join(', ')}.');
   }
-  if (!priced && missing.isNotEmpty && dashboard.loadError == null && !dashboard.loading) {
+  if (!priced &&
+      missing.isNotEmpty &&
+      dashboard.loadError == null &&
+      !dashboard.loading) {
     lines.add('No price for ${missing.join(', ')}.');
   }
   final skipped = dashboard.ranges.skippedBuyDays;
   if (skipped > 0) {
+    const reason = 'no closing price';
     lines.add(
       skipped == 1
-          ? '1 buy day had no price within 5 days, so it was left out.'
-          : '$skipped buy days had no price within 5 days, so they were left out.',
+          ? '1 buy day had $reason, so it was left out.'
+          : '$skipped buy days had $reason, so they were left out.',
     );
   }
   return lines;

@@ -4,7 +4,7 @@ import '../data/series_repository.dart';
 import '../logic/series_edit.dart';
 import '../models/buy_series.dart';
 
-/// Buys that live only while the expert calendar is open.
+/// Expert-calendar buys kept in memory for this visit.
 class MemorySeriesRepository implements SeriesRepository {
   final _updates = StreamController<List<BuySeries>>.broadcast();
   List<BuySeries> _items = [];
@@ -29,6 +29,12 @@ class MemorySeriesRepository implements SeriesRepository {
   Future<void> saveMany(List<BuySeries> series) async {
     if (series.isEmpty) return;
     _items = [..._items, ...series];
+    _publish();
+  }
+
+  @override
+  Future<void> replaceAll(List<BuySeries> series) async {
+    _items = List<BuySeries>.of(series);
     _publish();
   }
 

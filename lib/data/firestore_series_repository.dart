@@ -40,6 +40,12 @@ class FirestoreSeriesRepository implements SeriesRepository {
   }
 
   @override
+  Future<void> replaceAll(List<BuySeries> series) async {
+    await clearAll();
+    if (series.isNotEmpty) await saveMany(series);
+  }
+
+  @override
   Future<void> clearAll() async {
     while (true) {
       final snapshot = await _series.limit(500).get();

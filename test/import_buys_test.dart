@@ -332,10 +332,40 @@ void main() {
     expect(result.accepted[0].anchorDate, DateTime(2026, 10, 27));
     expect(result.accepted[5].interval, 3);
     expect(result.accepted[5].untilDate, DateTime(2026, 12, 25));
+    expect(result.accepted[8].numberOfShares, 1);
     expect(result.skipped.single.label, 'Natco Pharma Ltd');
     expect(
       result.skipped.single.message,
       'The market is closed on Saturday and Sunday.',
     );
+  });
+
+  test('number_of_shares is kept, and a missing count is one share', () {
+    final counted = _import('''
+[
+  {
+    "stock_name": "Esconet",
+    "stock_code": "ESCONET",
+    "buy_date": "2026-11-05",
+    "notes": "Buy 1 lot",
+    "number_of_shares": 400,
+    "Repeat": {"type": "Don't repeat"}
+  }
+]
+''');
+    expect(counted.accepted.single.numberOfShares, 400);
+
+    final missing = _import('''
+[
+  {
+    "stock_name": "Reliance",
+    "stock_code": "RELIANCE",
+    "buy_date": "2026-10-27",
+    "notes": "",
+    "Repeat": {"type": "Don't repeat"}
+  }
+]
+''');
+    expect(missing.accepted.single.numberOfShares, 1);
   });
 }

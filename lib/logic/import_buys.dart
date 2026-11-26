@@ -169,6 +169,7 @@ _Draft _draftBuy(
         map['stock_code'] is String ? map['stock_code'] as String : '',
       ),
       notes: notes is String ? notes.trim() : '',
+      numberOfShares: shareCountOf(map['number_of_shares']),
       anchorDate: anchor,
       frequency: parsed.frequency!,
       interval: parsed.interval!,

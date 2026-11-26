@@ -8,11 +8,15 @@ import '../theme/calendar_theme.dart';
 import 'buy_sheet.dart';
 
 Future<void> showDayList(BuildContext context, {required DateTime day}) {
+  final calendar = context.read<CalendarController>();
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) => DayListSheet(day: dateOnly(day)),
+    builder: (context) => ChangeNotifierProvider<CalendarController>.value(
+      value: calendar,
+      child: DayListSheet(day: dateOnly(day)),
+    ),
   );
 }
 
@@ -37,7 +41,10 @@ class DayListSheet extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(prettyDate(day), style: Theme.of(context).textTheme.titleLarge),
+                  child: Text(
+                    prettyDate(day),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
                 FloatingActionButton.small(
                   heroTag: 'add-on-day',
@@ -53,7 +60,9 @@ class DayListSheet extends StatelessWidget {
                 ? Center(
                     child: Text(
                       'No buys on this day',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   )
                 : ListView.separated(
@@ -62,14 +71,22 @@ class DayListSheet extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final buy = buys[index];
                       return ListTile(
-                        leading: Container(width: 4, height: 36, color: colors.today),
+                        leading: Container(
+                          width: 4,
+                          height: 36,
+                          color: colors.today,
+                        ),
                         title: Text(buy.series.stockName),
                         subtitle: Text(
                           buy.series.notes.isEmpty
                               ? buy.series.symbol
                               : '${buy.series.symbol} · ${buy.series.notes}',
                         ),
-                        onTap: () => showBuySheet(context, day: day, existing: buy.series),
+                        onTap: () => showBuySheet(
+                          context,
+                          day: day,
+                          existing: buy.series,
+                        ),
                       );
                     },
                   ),
