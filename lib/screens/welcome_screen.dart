@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../expertpick/expert_calendar_scope.dart';
 import '../state/auth_controller.dart';
 import '../theme/calendar_theme.dart';
+import '../triggertool/trigger_landing_screen.dart';
 import 'calendar_screen.dart';
 
 const _ink = Color(0xFF1B2330);
@@ -49,6 +50,14 @@ class HomeScreen extends StatelessWidget {
             MaterialPageRoute<void>(
               settings: const RouteSettings(name: '/expert-calendar'),
               builder: (_) => const ExpertCalendarScope(),
+            ),
+          );
+        },
+        onOpenTrigger: () {
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              settings: const RouteSettings(name: '/trigger-tool'),
+              builder: (_) => const TriggerLandingScreen(),
             ),
           );
         },
@@ -159,10 +168,15 @@ class _IntroPage extends StatelessWidget {
 void _noop() {}
 
 class _ToolsPage extends StatelessWidget {
-  const _ToolsPage({required this.onOpenCalendar, required this.onOpenExpert});
+  const _ToolsPage({
+    required this.onOpenCalendar,
+    required this.onOpenExpert,
+    required this.onOpenTrigger,
+  });
 
   final VoidCallback onOpenCalendar;
   final VoidCallback onOpenExpert;
+  final VoidCallback onOpenTrigger;
 
   @override
   Widget build(BuildContext context) {
@@ -214,21 +228,15 @@ class _ToolsPage extends StatelessWidget {
             onTap: onOpenExpert,
           ),
           _ToolCard(
-            icon: Icons.widgets_outlined,
-            title: 'Coming Soon',
-            detail: 'A further tool will land here later.',
-            muted: true,
-            onTap: () => _onTheWay(context),
+            icon: Icons.bolt,
+            title: 'Auto Trigger Tool',
+            detail:
+                'Set a future buy price and add the stock when that trigger is hit.',
+            onTap: onOpenTrigger,
           ),
         ],
       ),
     );
-  }
-
-  void _onTheWay(BuildContext context) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('On the way.')));
   }
 }
 
@@ -358,14 +366,12 @@ class _ToolCard extends StatelessWidget {
     required this.title,
     required this.detail,
     required this.onTap,
-    this.muted = false,
   });
 
   final IconData icon;
   final String title;
   final String detail;
   final VoidCallback onTap;
-  final bool muted;
 
   @override
   Widget build(BuildContext context) {
@@ -397,7 +403,7 @@ class _ToolCard extends StatelessWidget {
                     height: 140,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: muted ? const Color(0xFFEEF3F2) : _panel,
+                      color: _panel,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Center(
@@ -405,7 +411,7 @@ class _ToolCard extends StatelessWidget {
                         width: 64,
                         height: 64,
                         decoration: BoxDecoration(
-                          color: muted ? const Color(0xFF8E9AA0) : _tealDeep,
+                          color: _tealDeep,
                           borderRadius: BorderRadius.circular(18),
                         ),
                         child: Icon(icon, color: Colors.white, size: 30),

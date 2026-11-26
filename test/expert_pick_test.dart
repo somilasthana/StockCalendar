@@ -146,7 +146,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Expert Pick Calendar'), findsOneWidget);
-    expect(find.text('Coming Soon'), findsOneWidget);
+    expect(find.text('Auto Trigger Tool'), findsOneWidget);
     await tester.ensureVisible(find.text('Expert Pick Calendar'));
     await tester.tap(find.text('Expert Pick Calendar'));
     await _until(tester, find.text('No Expert Scrip Added to Calendar'));
